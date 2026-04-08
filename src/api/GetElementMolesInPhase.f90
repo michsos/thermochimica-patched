@@ -61,7 +61,7 @@ subroutine GetElementMolesInPhase(cElement, lcElement, cPhase, lcPhase, dMolesOu
 
 
     ! Initialize variables:
-    INFO            = 0
+    INFO            = 2
     dMolesOut = 0D0
     k = 0
 

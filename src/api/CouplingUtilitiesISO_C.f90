@@ -136,6 +136,57 @@ subroutine GetNumberElementsDatabaseISO(dElements) &
 
 end subroutine GetNumberElementsDatabaseISO
 
+subroutine GetNumberPhasesDatabaseISO(iSolnPhases, iConPhases) &
+    bind(C, name="TCAPI_getNumberPhasesDatabase")
+
+    USE,INTRINSIC :: ISO_C_BINDING
+    USE ModuleParseCS, ONLY: nSolnPhasesSysCS, nSpeciesPhaseCS, nSpeciesCS
+
+    implicit none
+
+    integer(C_INT), intent(out):: iSolnPhases, iConPhases
+
+    iSolnPhases = nSolnPhasesSysCS
+    iConPhases = nSpeciesCS - nSpeciesPhaseCS(nSolnPhasesSysCS)
+
+    return
+
+end subroutine GetNumberPhasesDatabaseISO
+
+function GetDatabasePhaseNameAtIndexISO(phase_index, phase_name_len) &
+    bind(C, name='TCAPI_getDatabasePhaseNameAtIndex')
+
+    USE, INTRINSIC :: ISO_C_BINDING
+    USE ModuleParseCS, ONLY: nSolnPhasesSysCS, nSpeciesPhaseCS, nSpeciesCS, cSolnPhaseNameCS, cSpeciesNameCS
+
+    implicit none
+
+    integer(c_int), intent(in) :: phase_index
+    integer(c_int), intent(out) :: phase_name_len
+    type(c_ptr) :: GetDatabasePhaseNameAtIndexISO
+    integer :: pure_phase_index
+
+    phase_name_len = 0
+    GetDatabasePhaseNameAtIndexISO = c_null_ptr
+
+    if (phase_index <= 0) return
+
+    if (phase_index <= nSolnPhasesSysCS) then
+        GetDatabasePhaseNameAtIndexISO = c_loc(cSolnPhaseNameCS(phase_index))
+        phase_name_len = len_trim(cSolnPhaseNameCS(phase_index))
+        return
+    end if
+
+    pure_phase_index = nSpeciesPhaseCS(nSolnPhasesSysCS) + phase_index - nSolnPhasesSysCS
+    if ((pure_phase_index > nSpeciesPhaseCS(nSolnPhasesSysCS)) .AND. (pure_phase_index <= nSpeciesCS)) then
+        GetDatabasePhaseNameAtIndexISO = c_loc(cSpeciesNameCS(pure_phase_index))
+        phase_name_len = len_trim(cSpeciesNameCS(pure_phase_index))
+    end if
+
+    return
+
+end function GetDatabasePhaseNameAtIndexISO
+
 function GetElementAtIndexISO(index, len) &
     bind(C, name='TCAPI_getElementAtIndex')
 
@@ -982,6 +1033,27 @@ subroutine GetPureConPhaseMolISO(cPureConOut, lcPureConOut, dPureConMolOut, INFO
 
 end subroutine GetPureConPhaseMolISO
 
+subroutine GetPureConPhaseDrivingForceISO(cPureConOut, lcPureConOut, dDrivingForceOut, INFO) &
+    bind(C, name="TCAPI_getPureConPhaseDrivingForce")
+
+    USE,INTRINSIC :: ISO_C_BINDING
+
+    implicit none
+
+    integer(C_INT),       intent(out)                :: INFO
+    real(C_DOUBLE),       intent(out)                :: dDrivingForceOut
+    character(kind=c_char,len=1), target, intent(in) :: cPureConOut(*)
+    integer(c_size_t), intent(in), value             :: lcPureConOut
+    character(kind=c_char,len=lcPureConOut), pointer :: fPureConOut
+
+    call c_f_pointer(cptr=c_loc(cPureConOut), fptr=fPureConOut)
+
+    call GetPureConPhaseDrivingForce(fPureConOut, dDrivingForceOut, INFO)
+
+    return
+
+end subroutine GetPureConPhaseDrivingForceISO
+
 subroutine GetSUBLSiteMolISO(cSolnOut, lcSolnOut, iSublatticeOut, iConstituentOut, dSiteMolOut, INFO) &
     bind(C, name="TCAPI_getSublSiteMol")
 
@@ -1181,6 +1253,66 @@ subroutine SetFuzzyStoichISO(lFuzzyStoichIn) &
 
     return
   end subroutine SetGibbsMinCheckISO
+
+  subroutine ClearPhaseExclusionsISO() &
+    bind(C, name="TCAPI_clearPhaseExclusions")
+
+    USE,INTRINSIC :: ISO_C_BINDING
+
+    implicit none
+
+    call ClearPhaseExclusions
+
+    return
+  end subroutine ClearPhaseExclusionsISO
+
+  subroutine AddPhaseExcludedISO(cPhaseName, lcPhaseName) &
+    bind(C, name="TCAPI_addPhaseExcluded")
+
+    USE,INTRINSIC :: ISO_C_BINDING
+
+    implicit none
+
+    character(kind=c_char,len=1), target, intent(in) :: cPhaseName(*)
+    integer(c_size_t), intent(in), value             :: lcPhaseName
+    character(kind=c_char,len=lcPhaseName), pointer  :: fPhaseName
+
+    call c_f_pointer(cptr=c_loc(cPhaseName), fptr=fPhaseName)
+    call AddPhaseExcluded(fPhaseName)
+
+    return
+  end subroutine AddPhaseExcludedISO
+
+  subroutine AddPhaseExcludedExceptISO(cPhaseName, lcPhaseName) &
+    bind(C, name="TCAPI_addPhaseExcludedExcept")
+
+    USE,INTRINSIC :: ISO_C_BINDING
+
+    implicit none
+
+    character(kind=c_char,len=1), target, intent(in) :: cPhaseName(*)
+    integer(c_size_t), intent(in), value             :: lcPhaseName
+    character(kind=c_char,len=lcPhaseName), pointer  :: fPhaseName
+
+    call c_f_pointer(cptr=c_loc(cPhaseName), fptr=fPhaseName)
+    call AddPhaseExcludedExcept(fPhaseName)
+
+    return
+  end subroutine AddPhaseExcludedExceptISO
+
+  subroutine GetSystemGibbsEnergyISO(dGibbsEnergyOut) &
+    bind(C, name="TCAPI_getSystemGibbsEnergy")
+
+    USE,INTRINSIC :: ISO_C_BINDING
+
+    implicit none
+
+    real(C_DOUBLE), intent(out) :: dGibbsEnergyOut
+
+    call GetSystemGibbsEnergy(dGibbsEnergyOut)
+
+    return
+  end subroutine GetSystemGibbsEnergyISO
 
   subroutine SetMinMoleFractionISO(dMinMolFrac) &
     bind(C, name="TCAPI_setMinMoleFraction")

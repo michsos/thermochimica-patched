@@ -137,7 +137,7 @@ subroutine CompGibbsMagneticSoln(iSolnPhaseIndex)
             end if
             dTemp = -(Tcritical - dTempCoeff1) * dTempD
             dTemp = g * ((dTempCoeff2 - B) / (1D0 + B)) + DLOG(1D0 + B) * (dTemp + g)
-            if (cSolnPhaseType(iSolnPhaseIndex) == 'RKMPM') then
+            if ((cSolnPhaseType(iSolnPhaseIndex) == 'RKMPM').OR.(cSolnPhaseType(iSolnPhaseIndex) == 'QKTOM')) then
                 dMagGibbsEnergy(i) = dTemp
             else if (cSolnPhaseType(iSolnPhaseIndex) == 'SUBLM') then
                 m = i - iFirst + 1

@@ -131,7 +131,7 @@ subroutine ThermoDEBUG
     elseif (INFOThermo == 33) then
         print *, 'DEBUG: Parser: The number of sublattices per phase is not supported. '
     elseif (INFOThermo == 34) then
-        print *, 'DEBUG: Parser: Magnetic mixing terms are not supported yet. '
+        print *, 'DEBUG: Parser: QKTOM magnetic mixing terms are not supported by this Thermochimica build.'
     elseif (INFOThermo == 35) then
         print *, 'DEBUG: A coefficient in the iTempVec vector in the CheckPureConPhaseRem subroutine is zero,'
         print *, 'but must be positive.'

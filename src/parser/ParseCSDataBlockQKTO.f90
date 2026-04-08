@@ -64,7 +64,18 @@ subroutine ParseCSDataBlockQKTO( i )
 
     implicit none
 
-    integer :: i
+    integer :: i, iMagneticMixingSentinel
+
+    if (cSolnPhaseTypeCS(i) == 'QKTOM') then
+        read (1,*,IOSTAT = INFO) iMagneticMixingSentinel
+        if (INFO /= 0) then
+            INFO = 1600 + i
+            return
+        elseif (iMagneticMixingSentinel /= 0) then
+            INFO = 34
+            return
+        end if
+    end if
 
     ! Loop through excess parameters:
     LOOP_ExcessMixingQKTO: do

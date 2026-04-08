@@ -123,7 +123,8 @@ subroutine WriteJSONSolnPhase
         ! Print driving force
         write(1,'(A24,ES25.16E3,A1)') '      "driving force": ', dDrivingForceSoln(j), ','
 
-        if ((cSolnPhaseType(j) == 'SUBLM') .OR. (cSolnPhaseType(j) == 'RKMPM')) then
+        if ((cSolnPhaseType(j) == 'SUBLM') .OR. (cSolnPhaseType(j) == 'RKMPM') .OR. &
+            (cSolnPhaseType(j) == 'QKTOM')) then
             Tcritical = 0D0
             B = 0D0
             call CompMagneticTemperatureMoment(j,Tcritical,B)

@@ -816,6 +816,93 @@ subroutine SetGibbsMinCheck(lGibbsMinCheckIn)
   return
 end subroutine SetGibbsMinCheck
 
+subroutine ClearPhaseExclusions
+  USE ModuleThermoIO, ONLY: nPhasesExcluded, nPhasesExcludedExcept, cPhasesExcluded, cPhasesExcludedExcept
+
+  implicit none
+
+  nPhasesExcluded = 0
+  nPhasesExcludedExcept = 0
+  cPhasesExcluded = ''
+  cPhasesExcludedExcept = ''
+
+  return
+end subroutine ClearPhaseExclusions
+
+subroutine AddPhaseExcluded(cPhaseName)
+  USE ModuleThermoIO, ONLY: nPhasesExcluded, cPhasesExcluded
+
+  implicit none
+
+  character(*), intent(in) :: cPhaseName
+  character(25) :: cPhaseNameLen
+  integer :: i
+
+  cPhaseNameLen = ''
+  if (len_trim(cPhaseName) > 0) then
+    cPhaseNameLen = adjustl(cPhaseName(1:min(25, len(cPhaseName))))
+    cPhaseNameLen = trim(cPhaseNameLen)
+  end if
+
+  if (len_trim(cPhaseNameLen) <= 0) return
+
+  do i = 1, nPhasesExcluded
+    if (cPhasesExcluded(i) == cPhaseNameLen) return
+  end do
+
+  if (nPhasesExcluded < size(cPhasesExcluded)) then
+    nPhasesExcluded = nPhasesExcluded + 1
+    cPhasesExcluded(nPhasesExcluded) = cPhaseNameLen
+  end if
+
+  return
+end subroutine AddPhaseExcluded
+
+subroutine AddPhaseExcludedExcept(cPhaseName)
+  USE ModuleThermoIO, ONLY: nPhasesExcludedExcept, cPhasesExcludedExcept
+
+  implicit none
+
+  character(*), intent(in) :: cPhaseName
+  character(25) :: cPhaseNameLen
+  integer :: i
+
+  cPhaseNameLen = ''
+  if (len_trim(cPhaseName) > 0) then
+    cPhaseNameLen = adjustl(cPhaseName(1:min(25, len(cPhaseName))))
+    cPhaseNameLen = trim(cPhaseNameLen)
+  end if
+
+  if (len_trim(cPhaseNameLen) <= 0) return
+
+  do i = 1, nPhasesExcludedExcept
+    if (cPhasesExcludedExcept(i) == cPhaseNameLen) return
+  end do
+
+  if (nPhasesExcludedExcept < size(cPhasesExcludedExcept)) then
+    nPhasesExcludedExcept = nPhasesExcludedExcept + 1
+    cPhasesExcludedExcept(nPhasesExcludedExcept) = cPhaseNameLen
+  end if
+
+  return
+end subroutine AddPhaseExcludedExcept
+
+subroutine GetSystemGibbsEnergy(dGibbsEnergyOut)
+  USE ModuleThermoIO, ONLY: INFOThermo, dGibbsEnergySys
+
+  implicit none
+
+  real(8), intent(out) :: dGibbsEnergyOut
+
+  if ((INFOThermo == 0) .OR. (INFOThermo == 12)) then
+    dGibbsEnergyOut = dGibbsEnergySys
+  else
+    dGibbsEnergyOut = 0D0
+  end if
+
+  return
+end subroutine GetSystemGibbsEnergy
+
 subroutine InitThermoAPI
 
   USE ModuleThermoTolerance, ONLY: SetMachineDefaultTolerances, ApplyToleranceOverride

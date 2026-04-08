@@ -210,7 +210,8 @@ subroutine PrintResultsSolnPhase
             print '(A7,A6,A5,A15)', cDummy, FMTA, ' mol ', cSolnPhaseName(l)
         end if
 
-        if ((cSolnPhaseType(l) == 'SUBLM') .OR. (cSolnPhaseType(l) == 'RKMPM')) then
+        if ((cSolnPhaseType(l) == 'SUBLM') .OR. (cSolnPhaseType(l) == 'RKMPM') .OR. &
+            (cSolnPhaseType(l) == 'QKTOM')) then
             Tcritical = 0D0
             B = 0D0
             call CompMagneticTemperatureMoment(l,Tcritical,B)
@@ -242,7 +243,7 @@ subroutine PrintResultsSolnPhase
         allocate(iTempSpecies(k), dTempSpecies(k))
         select case (cSolnPhaseType(l))
 
-            case ('IDMX', 'RKMP', 'RKMPM', 'QKTO')
+            case ('IDMX', 'RKMP', 'RKMPM', 'QKTO', 'QKTOM')
                 ! Initialize temporary variables:
                 dTempSpecies(1:k) = dmolFraction(iFirst:iLast)
 

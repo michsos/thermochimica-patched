@@ -156,6 +156,7 @@ subroutine CompThermoData
         jj = 0
         iSublPhaseIndex = iPhaseSublatticeCS(n)
         if ((cSolnPhaseTypeCS(n) == 'SUBG') .OR. (cSolnPhaseTypeCS(n) == 'SUBQ')) then
+            if (l == 0) cycle LOOP_nPhasesCS
             dChemicalPotentialTemp = 0D0
             LOOP_SROPairs: do i = iFirst, iFirst - 1 + nPairsSROCS(iSublPhaseIndex,1)
                 l = 0
@@ -605,7 +606,7 @@ subroutine CompThermoData
                 cRegularParam(n) = cRegularParamCS(j)
 
                 select case (cSolnPhaseTypeCS(i))
-                    case ('QKTO', 'RKMP', 'RKMPM')
+                    case ('QKTO', 'QKTOM', 'RKMP', 'RKMPM')
                         ! Compute excess term coefficients
                         do k = 1, 6
                             dExcessGibbsParam(n) = dExcessGibbsParam(n) + dRegularParamCS(j,k) * dGibbsCoeff(k)

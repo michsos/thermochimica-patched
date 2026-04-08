@@ -79,7 +79,7 @@ subroutine CompExcessGibbsEnergyQKTO(iSolnIndex)
 
     ! Return control to the parent subroutine if there aren't any interaction parameters for this phase:
     if ((nParamPhase(iSolnIndex) - nParamPhase(iSolnIndex-1) == 0).OR. &
-        (cSolnPhaseType(iSolnIndex) /= 'QKTO')) return
+        ((cSolnPhaseType(iSolnIndex) /= 'QKTO').AND.(cSolnPhaseType(iSolnIndex) /= 'QKTOM'))) return
 
     ! Loop through all interaction parameters in this phase:
     do iParam = nParamPhase(iSolnIndex-1)+1, nParamPhase(iSolnIndex)

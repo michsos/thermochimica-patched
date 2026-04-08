@@ -133,7 +133,8 @@ subroutine ParseCSDataBlock
 
         ! Check if the solution phase contains magnetic ordering terms, and if so,
         ! read in the terms:
-        if ((cSolnPhaseTypeCS(i) == 'RKMPM').OR.(cSolnPhaseTypeCS(i) == 'SUBLM')) then
+        if ((cSolnPhaseTypeCS(i) == 'RKMPM').OR.(cSolnPhaseTypeCS(i) == 'QKTOM').OR. &
+            (cSolnPhaseTypeCS(i) == 'SUBLM')) then
             ! Magnetic ordering terms are present.
 
             read (1,*,IOSTAT = INFO) dTempVec(1:2)
@@ -219,7 +220,7 @@ subroutine ParseCSDataBlock
             endif
 
             ! Mole/equivalent fraction conversion and group number:
-            if (cSolnPhaseTypeCS(i) == 'QKTO') then
+            if ((cSolnPhaseTypeCS(i) == 'QKTO').OR.(cSolnPhaseTypeCS(i) == 'QKTOM')) then
                 read (1,*,IOSTAT = INFO) dQKTOParamsCS(j,1:2)
             end if
 
@@ -233,7 +234,7 @@ subroutine ParseCSDataBlock
             case ('IDMX')
                 ! Do nothing.
             ! Quasichemical Kohler-Toop model
-            case ('QKTO')
+            case ('QKTO', 'QKTOM')
                 call ParseCSDataBlockQKTO(i)
             ! Redlich-Kister-Muggiano-Polynomial model
             case ('RKMP', 'RKMPM')

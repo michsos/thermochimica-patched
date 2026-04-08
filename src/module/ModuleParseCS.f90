@@ -77,7 +77,7 @@ module ModuleParseCS
     integer                                     :: nElementsCS, nSpeciesCS, nSolnPhasesSysCS, INFO, iMiscSUBI
     integer                                     :: nParamCS, nCountSublatticeCS, nMaxSpeciesPhaseCS, nMagParamCS
     integer,        parameter                   :: nSolnPhasesSysMax = 100, nMaxSublatticeCS = 5
-    integer,        parameter                   :: nSolnTypeSupport = 10
+    integer,        parameter                   :: nSolnTypeSupport = 11
     integer,        parameter                   :: nGibbsCoeff = 13, nMaxGibbsEqs = 6, nParamMax = 4
     integer,        dimension(:),   allocatable :: nSpeciesPhaseCS, nGibbsEqSpecies, iPhaseCS, iParticlesPerMoleCS
     integer,        dimension(:),   allocatable :: nParamPhaseCS, iParamPassCS, nSublatticePhaseCS, iPhaseSublatticeCS
@@ -104,7 +104,7 @@ module ModuleParseCS
     character,      dimension(:),   allocatable :: cRegularParamCS
 
     character(8),   dimension(nSolnTypeSupport), parameter :: cSolnPhaseTypeSupport = &
-                                                    ['IDMX    ','QKTO    ','SUBL    ','RKMP    ','RKMPM   ','SUBLM   ','SUBG    ', &
-                                                    'SUBQ    ','SUBI    ','SUBM    ']
+                                                    ['IDMX    ','QKTO    ','QKTOM   ','SUBL    ','RKMP    ','RKMPM   ','SUBLM   ', &
+                                                    'SUBG    ','SUBQ    ','SUBI    ','SUBM    ']
 
 end module ModuleParseCS
