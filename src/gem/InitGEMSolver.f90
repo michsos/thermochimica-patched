@@ -68,6 +68,7 @@ subroutine InitGEMSolver
     real(8)::                               dTemp, dSum
     real(8),dimension(-1:nSolnPhasesSys)::  dTempVec
     logical::                               lPhasePass, lCompEverything
+    logical::                               IsSpeciesDormant, IsSolutionPhaseDormant
 
 
     ! Check to see if allocatable arrays have already been allocated:
@@ -209,11 +210,14 @@ subroutine InitGEMSolver
         ! Count the number of pure condensed phases and solution phases are assumed to be part of the phase
         ! assemblage and establish iAssemblage based on the results of Leveling and PostLeveling:
         LOOP_AddPhase: do i = 1, nElements
+            if (IsSpeciesDormant(iAssemblageLast(i))) cycle LOOP_AddPhase
+
             if ((iPhase(iAssemblageLast(i)) == 0).AND.(nConPhases + nSolnPhases < nElements)) then
                 nConPhases              = nConPhases + 1
                 iAssemblage(nConPhases) = iAssemblageLast(i)
                 dMolesPhase(nConPhases) = dMolesPhaseLast(i)
             elseif ((iPhase(iAssemblageLast(i)) > 0).AND.(nConPhases + nSolnPhases < nElements)) then
+                if (IsSolutionPhaseDormant(iPhase(iAssemblageLast(i)))) cycle LOOP_AddPhase
                 do j = 1,nSolnPhases
                     k = nElements - j + 1
                     ! Ensure that this solution phase is not already stored:
@@ -367,6 +371,7 @@ subroutine InitGemCheckSolnPhase
     integer,dimension(nElements):: iAssemblageLast
     real(8)::   dTemp
     logical::   lPhasePass
+    logical::   IsSolutionPhaseDormant
 
 
     ! Initialize variables:
@@ -374,6 +379,8 @@ subroutine InitGemCheckSolnPhase
 
     ! Loop through all solution phases in the system to check for a miscibiltiy gap:
     LOOP_Subminimization: do i = 1, nSolnPhasesSys
+
+        if (IsSolutionPhaseDormant(i)) cycle LOOP_Subminimization
 
         call CheckMiscibilityGap(i,lPhasePass)
 

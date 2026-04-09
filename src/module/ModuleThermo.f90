@@ -118,7 +118,7 @@ module ModuleThermo
     character(12), dimension(:),   allocatable::            cElementName
     character(30), dimension(:),   allocatable, target::    cSpeciesName
     character(8),  dimension(:),   allocatable::            cSolnPhaseType
-    character(25), dimension(:),   allocatable, target::    cSolnPhaseName
+    character(30), dimension(:),   allocatable, target::    cSolnPhaseName
     character(8),  dimension(:,:,:),allocatable::           cConstituentNameSUB
     character,     dimension(:),   allocatable::            cRegularParam
     character(30), dimension(:,:), allocatable, target::    cPairName

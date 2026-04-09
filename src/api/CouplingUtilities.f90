@@ -816,6 +816,28 @@ subroutine SetGibbsMinCheck(lGibbsMinCheckIn)
   return
 end subroutine SetGibbsMinCheck
 
+subroutine SetFreezePhaseAssemblage(lFreezePhaseAssemblageIn)
+  USE ModuleThermoIO, ONLY: lFreezePhaseAssemblage
+
+  implicit none
+  logical, intent(in) :: lFreezePhaseAssemblageIn
+
+  lFreezePhaseAssemblage = lFreezePhaseAssemblageIn
+
+  return
+end subroutine SetFreezePhaseAssemblage
+
+subroutine SetPhaseDormancyEnabled(lPhaseDormancyEnabledIn)
+  USE ModuleThermoIO, ONLY: lPhaseDormancyActive
+
+  implicit none
+  logical, intent(in) :: lPhaseDormancyEnabledIn
+
+  lPhaseDormancyActive = lPhaseDormancyEnabledIn
+
+  return
+end subroutine SetPhaseDormancyEnabled
+
 subroutine ClearPhaseExclusions
   USE ModuleThermoIO, ONLY: nPhasesExcluded, nPhasesExcludedExcept, cPhasesExcluded, cPhasesExcludedExcept
 
@@ -829,18 +851,31 @@ subroutine ClearPhaseExclusions
   return
 end subroutine ClearPhaseExclusions
 
+subroutine ClearPhaseDormancy
+  USE ModuleThermoIO, ONLY: nPhasesDormant, nPhasesDormantExcept, cPhasesDormant, cPhasesDormantExcept
+
+  implicit none
+
+  nPhasesDormant = 0
+  nPhasesDormantExcept = 0
+  cPhasesDormant = ''
+  cPhasesDormantExcept = ''
+
+  return
+end subroutine ClearPhaseDormancy
+
 subroutine AddPhaseExcluded(cPhaseName)
   USE ModuleThermoIO, ONLY: nPhasesExcluded, cPhasesExcluded
 
   implicit none
 
   character(*), intent(in) :: cPhaseName
-  character(25) :: cPhaseNameLen
+  character(30) :: cPhaseNameLen
   integer :: i
 
   cPhaseNameLen = ''
   if (len_trim(cPhaseName) > 0) then
-    cPhaseNameLen = adjustl(cPhaseName(1:min(25, len(cPhaseName))))
+    cPhaseNameLen = adjustl(cPhaseName(1:min(30, len(cPhaseName))))
     cPhaseNameLen = trim(cPhaseNameLen)
   end if
 
@@ -864,12 +899,12 @@ subroutine AddPhaseExcludedExcept(cPhaseName)
   implicit none
 
   character(*), intent(in) :: cPhaseName
-  character(25) :: cPhaseNameLen
+  character(30) :: cPhaseNameLen
   integer :: i
 
   cPhaseNameLen = ''
   if (len_trim(cPhaseName) > 0) then
-    cPhaseNameLen = adjustl(cPhaseName(1:min(25, len(cPhaseName))))
+    cPhaseNameLen = adjustl(cPhaseName(1:min(30, len(cPhaseName))))
     cPhaseNameLen = trim(cPhaseNameLen)
   end if
 
@@ -887,6 +922,82 @@ subroutine AddPhaseExcludedExcept(cPhaseName)
   return
 end subroutine AddPhaseExcludedExcept
 
+subroutine AddPhaseDormant(cPhaseName)
+  USE ModuleThermoIO, ONLY: nPhasesDormant, cPhasesDormant
+
+  implicit none
+
+  character(*), intent(in) :: cPhaseName
+  character(30) :: cPhaseNameLen
+  integer :: i
+
+  cPhaseNameLen = ''
+  if (len_trim(cPhaseName) > 0) then
+    cPhaseNameLen = adjustl(cPhaseName(1:min(30, len(cPhaseName))))
+    cPhaseNameLen = trim(cPhaseNameLen)
+  end if
+
+  if (len_trim(cPhaseNameLen) <= 0) return
+
+  do i = 1, nPhasesDormant
+    if (cPhasesDormant(i) == cPhaseNameLen) return
+  end do
+
+  if (nPhasesDormant < size(cPhasesDormant)) then
+    nPhasesDormant = nPhasesDormant + 1
+    cPhasesDormant(nPhasesDormant) = cPhaseNameLen
+  end if
+
+  return
+end subroutine AddPhaseDormant
+
+subroutine AddPhaseDormantExcept(cPhaseName)
+  USE ModuleThermoIO, ONLY: nPhasesDormantExcept, cPhasesDormantExcept
+
+  implicit none
+
+  character(*), intent(in) :: cPhaseName
+  character(30) :: cPhaseNameLen
+  integer :: i
+
+  cPhaseNameLen = ''
+  if (len_trim(cPhaseName) > 0) then
+    cPhaseNameLen = adjustl(cPhaseName(1:min(30, len(cPhaseName))))
+    cPhaseNameLen = trim(cPhaseNameLen)
+  end if
+
+  if (len_trim(cPhaseNameLen) <= 0) return
+
+  do i = 1, nPhasesDormantExcept
+    if (cPhasesDormantExcept(i) == cPhaseNameLen) return
+  end do
+
+  if (nPhasesDormantExcept < size(cPhasesDormantExcept)) then
+    nPhasesDormantExcept = nPhasesDormantExcept + 1
+    cPhasesDormantExcept(nPhasesDormantExcept) = cPhaseNameLen
+  end if
+
+  return
+end subroutine AddPhaseDormantExcept
+
+subroutine GetDormantPhaseCandidateSummary(iPurePhaseIndexOut, dPureDrivingForceOut, iSolnPhaseIndexOut, dSolnDrivingForceOut, iAddOrderOut)
+  USE ModuleThermoIO, ONLY: iStrongestDormantPureConPhaseIndex, dStrongestDormantPureConDrivingForce, &
+                            iStrongestDormantSolnPhaseIndex, dStrongestDormantSolnDrivingForce, iDormantPhaseAddOrder
+
+  implicit none
+
+  integer, intent(out) :: iPurePhaseIndexOut, iSolnPhaseIndexOut, iAddOrderOut
+  real(8), intent(out) :: dPureDrivingForceOut, dSolnDrivingForceOut
+
+  iPurePhaseIndexOut = iStrongestDormantPureConPhaseIndex
+  dPureDrivingForceOut = dStrongestDormantPureConDrivingForce
+  iSolnPhaseIndexOut = iStrongestDormantSolnPhaseIndex
+  dSolnDrivingForceOut = dStrongestDormantSolnDrivingForce
+  iAddOrderOut = iDormantPhaseAddOrder
+
+  return
+end subroutine GetDormantPhaseCandidateSummary
+
 subroutine GetSystemGibbsEnergy(dGibbsEnergyOut)
   USE ModuleThermoIO, ONLY: INFOThermo, dGibbsEnergySys
 
@@ -902,6 +1013,82 @@ subroutine GetSystemGibbsEnergy(dGibbsEnergyOut)
 
   return
 end subroutine GetSystemGibbsEnergy
+
+subroutine GetSolnPhaseDrivingForce(cSolnOut, dDrivingForceOut, INFO)
+  USE ModuleThermo, ONLY: nSolnPhasesSys, cSolnPhaseName
+  USE ModuleThermoIO, ONLY: INFOThermo
+  USE ModuleGEMSolver, ONLY: dDrivingForceSoln
+
+  implicit none
+
+  integer, intent(out) :: INFO
+  integer :: i
+  real(8), intent(out) :: dDrivingForceOut
+  character(*), intent(in) :: cSolnOut
+  character(30) :: cSolnTemp
+
+  INFO = 0
+  dDrivingForceOut = 0D0
+
+  if ((INFOThermo /= 0) .AND. (INFOThermo /= 12)) then
+    INFO = -1
+    return
+  end if
+
+  cSolnTemp = cSolnOut(1:min(30, len(cSolnOut)))
+  cSolnTemp = trim(adjustl(cSolnTemp))
+
+  do i = 1, nSolnPhasesSys
+    if (cSolnTemp == trim(adjustl(cSolnPhaseName(i)))) then
+      dDrivingForceOut = dDrivingForceSoln(i)
+      return
+    end if
+  end do
+
+  INFO = 1
+  return
+end subroutine GetSolnPhaseDrivingForce
+
+subroutine GetSolnPhaseDrivingForceByIndex(iSolnIndex, dDrivingForceOut, INFO)
+  USE ModuleThermo, ONLY: nSolnPhasesSys
+  USE ModuleThermoIO, ONLY: INFOThermo
+  USE ModuleGEMSolver, ONLY: dDrivingForceSoln
+
+  implicit none
+
+  integer, intent(in) :: iSolnIndex
+  integer, intent(out) :: INFO
+  real(8), intent(out) :: dDrivingForceOut
+
+  INFO = 0
+  dDrivingForceOut = 0D0
+
+  if ((INFOThermo /= 0) .AND. (INFOThermo /= 12)) then
+    INFO = -1
+    return
+  end if
+
+  if ((iSolnIndex < 1) .OR. (iSolnIndex > nSolnPhasesSys)) then
+    INFO = 1
+    return
+  end if
+
+  dDrivingForceOut = dDrivingForceSoln(iSolnIndex)
+  return
+end subroutine GetSolnPhaseDrivingForceByIndex
+
+subroutine GetAllSolnPhaseDrivingForces(mDrivingForce)
+  USE ModuleThermo, ONLY: nSolnPhasesSys
+  USE ModuleGEMSolver, ONLY: dDrivingForceSoln
+
+  implicit none
+
+  real(8), intent(out), dimension(nSolnPhasesSys) :: mDrivingForce
+
+  mDrivingForce = dDrivingForceSoln
+
+  return
+end subroutine GetAllSolnPhaseDrivingForces
 
 subroutine InitThermoAPI
 
@@ -934,6 +1121,9 @@ subroutine ThermochimicaSetupAPI
 
   ! Compute thermodynamic data using the parameters from the specified ChemSage data-file:
   if (INFOThermo == 0) call CompThermoData
+
+  ! Build dormant masks only after the final system/species arrays exist.
+  if (INFOThermo == 0) call ResolveDormantPhaseMasks
 
   ! Check the thermodynamic database to ensure that it is appropriate:
   if (INFOThermo == 0) call CheckThermoData

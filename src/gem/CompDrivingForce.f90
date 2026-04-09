@@ -47,6 +47,7 @@ subroutine CompDrivingForce(iMaxDrivingForce,dMaxDrivingForce)
 
     integer :: i, j, iMaxDrivingForce
     real(8) :: dTemp, dMaxDrivingForce
+    logical :: IsPureConSpeciesDormant
 
 
     ! Initialize variables:
@@ -55,6 +56,8 @@ subroutine CompDrivingForce(iMaxDrivingForce,dMaxDrivingForce)
 
     ! Loop through all pure condensed phases:
     PureConTestLOOP: do i = nSpeciesPhase(nSolnPhasesSys) + 1, nSpecies - nDummySpecies
+
+        if (IsPureConSpeciesDormant(i)) cycle PureConTestLOOP
 
         ! do j = 1, nElements
         !     if (iAssemblage(j) == i) cycle PureConTestLOOP
@@ -83,3 +86,40 @@ subroutine CompDrivingForce(iMaxDrivingForce,dMaxDrivingForce)
     return
 
 end subroutine CompDrivingForce
+
+subroutine CompDormantDrivingForce(iMaxDormantDrivingForce, dMaxDormantDrivingForce)
+
+    USE ModuleThermo
+
+    implicit none
+
+    integer :: i, j, iMaxDormantDrivingForce
+    real(8) :: dTemp, dMaxDormantDrivingForce
+    logical :: IsPureConSpeciesDormant
+
+
+    iMaxDormantDrivingForce = 0
+    dMaxDormantDrivingForce = 0D0
+
+    PureConDormantTestLOOP: do i = nSpeciesPhase(nSolnPhasesSys) + 1, nSpecies - nDummySpecies
+
+        if (.NOT. IsPureConSpeciesDormant(i)) cycle PureConDormantTestLOOP
+
+        dTemp = 0D0
+        do j = 1, nElements
+            dTemp = dTemp + dElementPotential(j) * dStoichSpecies(i,j)
+        end do
+
+        dTemp = dStdGibbsEnergy(i) - dTemp
+        dTemp = dTemp / dSpeciesTotalAtoms(i)
+
+        if (dTemp < dMaxDormantDrivingForce) then
+            iMaxDormantDrivingForce = i - nSpeciesPhase(nSolnPhasesSys)
+            dMaxDormantDrivingForce = dTemp
+        end if
+
+    end do PureConDormantTestLOOP
+
+    return
+
+end subroutine CompDormantDrivingForce

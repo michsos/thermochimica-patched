@@ -111,9 +111,11 @@ subroutine CheckConvergence
 
     implicit none
 
-    integer :: i, j, k, l, c, iMaxDrivingForce
+    integer :: i, j, k, l, c, iMaxDrivingForce, iMaxDormantDrivingForce, iDormantBestSolnPhase
     real(8) :: dResidual, dMaxDrivingForce, dTempGibbs, dMassNorm, dNormComponent
+    real(8) :: dMaxDormantDrivingForce, dDormantBestSolnDrivingForce
     logical :: lCompEverything, lPhaseChange
+    logical :: IsSolutionPhaseDormant
 
 
     ! Initialize variables:
@@ -235,6 +237,46 @@ subroutine CheckConvergence
     ! Return if the functional norm is too large.  In other words, it's not worth the flops checking.
     if (dGEMFunctionNorm > dTolerance(1)) return
 
+    if (lFreezePhaseAssemblage) then
+        ! In frozen-assemblage mode, evaluate native phase-entry diagnostics but
+        ! do not force additional phase-add criteria before declaring convergence.
+        iMaxDormantDrivingForce = 0
+        dMaxDormantDrivingForce = 0D0
+        iDormantBestSolnPhase = 0
+        dDormantBestSolnDrivingForce = 0D0
+
+        call CompDrivingForce(iMaxDrivingForce, dMaxDrivingForce)
+        call CompDormantDrivingForce(iMaxDormantDrivingForce, dMaxDormantDrivingForce)
+
+        LOOP_TEST7_FROZEN: do i = 1,nSolnPhasesSys
+            if (lSolnPhases(i) .EQV. .TRUE.) cycle LOOP_TEST7_FROZEN
+
+            if (lMiscibility(i) .EQV. .TRUE.) then
+                call CheckMiscibilityGap(i,lPhaseChange)
+            else if (cSolnPhaseType(i) == 'IDMX') then
+                call CompMolFraction(i)
+            else
+                call CheckMiscibilityGap(i,lPhaseChange)
+            end if
+
+            if (IsSolutionPhaseDormant(i)) then
+                if (iDormantBestSolnPhase == 0) then
+                    iDormantBestSolnPhase = i
+                    dDormantBestSolnDrivingForce = dDrivingForceSoln(i)
+                else if (dDrivingForceSoln(i) < dDormantBestSolnDrivingForce) then
+                    iDormantBestSolnPhase = i
+                    dDormantBestSolnDrivingForce = dDrivingForceSoln(i)
+                end if
+            end if
+        end do LOOP_TEST7_FROZEN
+
+        call RecordDormantPhaseCandidateSummary(iMaxDormantDrivingForce, dMaxDormantDrivingForce, &
+            iDormantBestSolnPhase, dDormantBestSolnDrivingForce)
+
+        if (INFOThermo == 0) lConverged = .TRUE.
+        return
+    end if
+
     ! TEST #4: Check whether a pure condensed phase should be added to the phase assemblage:
     ! --------------------------------------------------------------------------------------
 
@@ -318,6 +360,9 @@ subroutine CheckConvergence
         ! Skip this phase if it is already predicted to be stable:
         if (lSolnPhases(i) .EQV. .TRUE.) cycle LOOP_TEST7
 
+        ! Dormant phases remain eligible for diagnostics but do not block convergence.
+        if (IsSolutionPhaseDormant(i)) cycle LOOP_TEST7
+
         ! Skip this phase if it is not the first "phase" of a phase containing a miscibility gap
         ! (this will be handled in test #8):
         if (lMiscibility(i) .EQV. .TRUE.) cycle LOOP_TEST7
@@ -335,6 +380,9 @@ subroutine CheckConvergence
 
         ! Skip if this phase is already part of the estimated phase assemblage:
         if (lSolnPhases(i) .EQV. .TRUE.) cycle LOOP_TEST9
+
+        ! Dormant phases remain eligible for diagnostics but do not block convergence.
+        if (IsSolutionPhaseDormant(i)) cycle LOOP_TEST9
 
         ! Check if this phase may contain a miscibility gap:
         if (lMiscibility(i) .EQV. .TRUE.) then

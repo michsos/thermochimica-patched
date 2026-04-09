@@ -71,6 +71,7 @@
 subroutine CheckSolnPhaseRem
 
     USE ModuleThermo
+    USE ModuleThermoIO, ONLY: lFreezePhaseAssemblage
     USE ModuleGEMSolver
 
     implicit none
@@ -85,6 +86,8 @@ subroutine CheckSolnPhaseRem
     dMaxDrivingForce = 0D0
     lPhasePass       = .FALSE.
     lSwapLater       = .FALSE.
+
+    if (lFreezePhaseAssemblage) return
 
     ! Loop through all solution phases currently predicted to be stable at equilibrium:
     LOOP_SolnRem: do i = 1, nSolnPhases

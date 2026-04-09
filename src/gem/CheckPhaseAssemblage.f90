@@ -158,13 +158,16 @@
 subroutine CheckPhaseAssemblage
 
     USE ModuleThermo
+    USE ModuleThermoIO, ONLY: lFreezePhaseAssemblage
     USE ModuleGEMSolver
 
     implicit none
 
-    integer      :: nPhasesCheck, j, iMaxDrivingForce
+    integer      :: nPhasesCheck, j, iMaxDrivingForce, iMaxDormantDrivingForce, iDormantBestSolnPhase
     real(8)      :: dMolesPhaseChange, dMaxChange, dMaxDrivingForce
+    real(8)      :: dMaxDormantDrivingForce, dDormantBestSolnDrivingForce, dActiveBestSolnDrivingForce
     logical      :: lAddPhase
+    logical      :: IsSolutionPhaseDormant
 
 
     ! Initialize variables:
@@ -172,6 +175,8 @@ subroutine CheckPhaseAssemblage
     dMaxChange        = 0D0
     dMolesPhaseChange = 0.01D0
     lAddPhase         = .FALSE.
+
+    if (lFreezePhaseAssemblage) return
 
     if ((iterGlobal <  30).AND.(iterGlobal - iterLast < 2)) return
     if ((iterGlobal >= 30).AND.(iterGlobal - iterLast < 5)) return
@@ -240,8 +245,15 @@ subroutine CheckPhaseAssemblage
             ! AND the system is stagnant:
             IF_CheckStagnant: if ((dMaxChange <= 0.95D0).AND.((nPhasesCheck == 0).OR.(iterGlobal - iterLast >= 30))) then
 
+                dDormantBestSolnDrivingForce = 0D0
+                dActiveBestSolnDrivingForce = 1D100
+                iDormantBestSolnPhase = 0
+                iMaxDormantDrivingForce = 0
+                dMaxDormantDrivingForce = 0D0
+
                 ! Compute the driving force for all pure condensed phases:
                 call CompDrivingForce(iMaxDrivingForce,dMaxDrivingForce)
+                call CompDormantDrivingForce(iMaxDormantDrivingForce, dMaxDormantDrivingForce)
 
                 if (lDebugMode) print *, 'condensed phase driving forces:', iMaxDrivingForce, dMaxDrivingForce
 
@@ -275,7 +287,27 @@ subroutine CheckPhaseAssemblage
                         end if
                     end if
 
+                    if (.NOT.(lSolnPhases(j))) then
+                        if (IsSolutionPhaseDormant(j)) then
+                            if (iDormantBestSolnPhase == 0) then
+                                iDormantBestSolnPhase = j
+                                dDormantBestSolnDrivingForce = dDrivingForceSoln(j)
+                            else if (dDrivingForceSoln(j) < dDormantBestSolnDrivingForce) then
+                                iDormantBestSolnPhase = j
+                                dDormantBestSolnDrivingForce = dDrivingForceSoln(j)
+                            end if
+                        else if (dDrivingForceSoln(j) < dActiveBestSolnDrivingForce) then
+                            dActiveBestSolnDrivingForce = dDrivingForceSoln(j)
+                        end if
+                    end if
+
                 end do
+
+                if (dActiveBestSolnDrivingForce == 1D100) dActiveBestSolnDrivingForce = 0D0
+
+                call RecordDormantPhaseCandidateSummary(iMaxDormantDrivingForce, &
+                    dMaxDormantDrivingForce, iDormantBestSolnPhase, &
+                    dDormantBestSolnDrivingForce)
 
                 if (lDebugMode) print *, 'solution phase driving forces:', MINLOC(dDrivingForceSoln), MINVAL(dDrivingForceSoln)
 
@@ -283,7 +315,7 @@ subroutine CheckPhaseAssemblage
                 ! Determine whether a pure condensed phase should be considered first or a solution phase.
                 ! This decision is based on whether the lowest driving force of a pure condensed phase is less
                 ! than that of all solution phases:
-                IF_AddOrder: if (dMaxDrivingForce < MINVAL(dDrivingForceSoln)) then
+                IF_AddOrder: if (dMaxDrivingForce < dActiveBestSolnDrivingForce) then
 
                     ! 4A) Check if a pure condensed phase should be added/swapped:
                     if (iterGlobal /= iterLast) call CheckPureConPhaseAdd(iMaxDrivingForce, dMaxDrivingForce)

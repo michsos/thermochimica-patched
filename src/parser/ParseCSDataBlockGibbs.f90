@@ -93,7 +93,7 @@ subroutine ParseCSDataBlockGibbs(i,j,iCounterGibbsEqn)
 
     ! Entry 3: Read name of constituent species:
     read (1,100,IOSTAT = INFO) cSpeciesNameCS(j)
-    100 FORMAT (A26)
+    100 FORMAT (A30)
     cSpeciesNameCS(j) = TRIM(ADJUSTL(cSpeciesNameCS(j)))
 
     ! Check to see if there is more than one particle per constituent formula mass.

@@ -36,7 +36,7 @@
 subroutine ResetThermo
 
     USE ModuleThermo
-    USE ModuleThermoIO, ONLY: INFOThermo, lRetryAttempted
+    USE ModuleThermoIO, ONLY: INFOThermo, lRetryAttempted, lDormantSolnPhases, lDormantSpecies
     USE ModuleGEMSolver
     USE ModuleSubMin
 
@@ -195,6 +195,12 @@ subroutine ResetThermo
     i = i + INFO
     if (allocated(iInterpolationOverride)) deallocate(iInterpolationOverride, STAT = INFO)
     i = i + INFO
+    if (allocated(lDormantSolnPhases)) deallocate(lDormantSolnPhases, STAT = INFO)
+    i = i + INFO
+    if (allocated(lDormantSpecies)) deallocate(lDormantSpecies, STAT = INFO)
+    i = i + INFO
+
+    call ResetDormantPhaseCandidateSummary
 
     lRetryAttempted = .FALSE.
 

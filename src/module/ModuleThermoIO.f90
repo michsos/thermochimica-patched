@@ -62,8 +62,17 @@ module ModuleThermoIO
     logical                                  :: lReinitAvailable = .FALSE., lReinitLoaded = .FALSE., lReinitRequested = .FALSE.
     logical                                  :: lStepTogether = .FALSE., lWriteJSON = .FALSE.
     logical                                  :: lFuzzyStoich = .FALSE., lGibbsMinCheck = .FALSE.
+    logical                                  :: lFreezePhaseAssemblage = .FALSE.
+    logical                                  :: lPhaseDormancyActive = .FALSE.
     integer                                  :: nPhasesExcluded = 0, nPhasesExcludedExcept = 0
-    character(25), dimension(1000)           :: cPhasesExcluded = '', cPhasesExcludedExcept = ''
+    integer                                  :: nPhasesDormant = 0, nPhasesDormantExcept = 0
+    integer                                  :: iStrongestDormantPureConPhaseIndex = 0, iStrongestDormantSolnPhaseIndex = 0
+    integer                                  :: iDormantPhaseAddOrder = 0
+    real(8)                                  :: dStrongestDormantPureConDrivingForce = 0D0
+    real(8)                                  :: dStrongestDormantSolnDrivingForce = 0D0
+    character(30), dimension(1000)           :: cPhasesExcluded = '', cPhasesExcludedExcept = ''
+    character(30), dimension(1000)           :: cPhasesDormant = '', cPhasesDormantExcept = ''
+    logical, dimension(:), allocatable       :: lDormantSolnPhases, lDormantSpecies
 
     ! Compound variables:
     integer                                  :: nCompounds = 0
@@ -77,7 +86,7 @@ module ModuleThermoIO
     integer                                  :: INFOThermo, nSolnPhasesOut, nPureConPhaseOut, nSpeciesOut
     real(8)                                  :: dGibbsEnergySys
     real(8), dimension(:), allocatable       :: dSolnPhaseMolesOut, dPureConPhaseMolesOut, dSpeciesMoleFractionOut
-    character(25), dimension(:), allocatable :: cSolnPhaseNameOut, cPureConPhaseNameOut, cSpeciesNameOut, cSpeciesPhaseOut
+    character(30), dimension(:), allocatable :: cSolnPhaseNameOut, cPureConPhaseNameOut, cSpeciesNameOut, cSpeciesPhaseOut
     logical, dimension(:), allocatable       :: lSpeciesStable
     real(8)                                  :: dHeatCapacity = 0D0, dEntropy = 0D0, dEnthalpy = 0D0
 

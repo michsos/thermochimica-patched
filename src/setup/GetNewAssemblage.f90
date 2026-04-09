@@ -96,6 +96,7 @@ subroutine GetNewAssemblage(iter)
     real(8),dimension(nElements)           :: dTemp
     real(8),dimension(nElements,nElements) :: A
     logical                                :: lPhasePass
+    logical                                :: IsSpeciesDormant
 
 
     ! Initialize variables:
@@ -105,7 +106,20 @@ subroutine GetNewAssemblage(iter)
     dLevel = 0D0
 
     ! Determine index of the species with the most negative relative Gibbs energy:
-    iNewPhase = MAXVAL(MINLOC(dChemicalPotential))
+    iNewPhase = 0
+    do i = 1, nSpecies
+        if (IsSpeciesDormant(i)) cycle
+        if (iNewPhase == 0) then
+            iNewPhase = i
+        else if (dChemicalPotential(i) < dChemicalPotential(iNewPhase)) then
+            iNewPhase = i
+        end if
+    end do
+
+    if (iNewPhase == 0) then
+        INFOThermo = 10
+        return
+    end if
 
     ! Shuffle the phase assemblage to make the best candidate phase to be tested first:
     call ShuffleAssemblage(iNewPhase,j)

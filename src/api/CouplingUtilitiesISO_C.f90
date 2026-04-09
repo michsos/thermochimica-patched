@@ -794,6 +794,22 @@ subroutine GetAssemblageISO(mAssemblage) &
 
 end subroutine GetAssemblageISO
 
+subroutine GetAllSolnPhaseDrivingForcesISO(mDrivingForce) &
+    bind(C, name="TCAPI_getAllSolnPhaseDrivingForces")
+
+    USE,INTRINSIC :: ISO_C_BINDING
+
+    USE ModuleThermo, ONLY: nSolnPhasesSys
+    implicit none
+
+    real(C_DOUBLE), intent(out), dimension(nSolnPhasesSys) :: mDrivingForce
+
+    call GetAllSolnPhaseDrivingForces(mDrivingForce)
+
+    return
+
+end subroutine GetAllSolnPhaseDrivingForcesISO
+
 subroutine GetAllElementPotentialISO(mElementPotential) &
     bind(C, name="TCAPI_getAllElementPotential")
 
@@ -1054,6 +1070,44 @@ subroutine GetPureConPhaseDrivingForceISO(cPureConOut, lcPureConOut, dDrivingFor
 
 end subroutine GetPureConPhaseDrivingForceISO
 
+subroutine GetSolnPhaseDrivingForceISO(cSolnOut, lcSolnOut, dDrivingForceOut, INFO) &
+    bind(C, name="TCAPI_getSolnPhaseDrivingForce")
+
+    USE,INTRINSIC :: ISO_C_BINDING
+
+    implicit none
+
+    integer(C_INT),       intent(out)                :: INFO
+    real(C_DOUBLE),       intent(out)                :: dDrivingForceOut
+    character(kind=c_char,len=1), target, intent(in) :: cSolnOut(*)
+    integer(c_size_t), intent(in), value             :: lcSolnOut
+    character(kind=c_char,len=lcSolnOut), pointer    :: fSolnOut
+
+    call c_f_pointer(cptr=c_loc(cSolnOut), fptr=fSolnOut)
+
+    call GetSolnPhaseDrivingForce(fSolnOut, dDrivingForceOut, INFO)
+
+    return
+
+end subroutine GetSolnPhaseDrivingForceISO
+
+subroutine GetSolnPhaseDrivingForceByIndexISO(iSolnIndex, dDrivingForceOut, INFO) &
+    bind(C, name="TCAPI_getSolnPhaseDrivingForceByIndex")
+
+    USE,INTRINSIC :: ISO_C_BINDING
+
+    implicit none
+
+    integer(C_INT), intent(in), value :: iSolnIndex
+    integer(C_INT), intent(out) :: INFO
+    real(C_DOUBLE), intent(out) :: dDrivingForceOut
+
+    call GetSolnPhaseDrivingForceByIndex(iSolnIndex, dDrivingForceOut, INFO)
+
+    return
+
+end subroutine GetSolnPhaseDrivingForceByIndexISO
+
 subroutine GetSUBLSiteMolISO(cSolnOut, lcSolnOut, iSublatticeOut, iConstituentOut, dSiteMolOut, INFO) &
     bind(C, name="TCAPI_getSublSiteMol")
 
@@ -1254,6 +1308,32 @@ subroutine SetFuzzyStoichISO(lFuzzyStoichIn) &
     return
   end subroutine SetGibbsMinCheckISO
 
+  subroutine SetFreezePhaseAssemblageISO(lFreezePhaseAssemblageIn) &
+    bind(C, name="TCAPI_setFreezePhaseAssemblage")
+
+    USE,INTRINSIC :: ISO_C_BINDING
+
+    implicit none
+    logical(C_BOOL), intent(in) :: lFreezePhaseAssemblageIn
+
+    call SetFreezePhaseAssemblage(lFreezePhaseAssemblageIn)
+
+    return
+  end subroutine SetFreezePhaseAssemblageISO
+
+  subroutine SetPhaseDormancyEnabledISO(lPhaseDormancyEnabledIn) &
+    bind(C, name="TCAPI_setPhaseDormancyEnabled")
+
+    USE,INTRINSIC :: ISO_C_BINDING
+
+    implicit none
+    logical(C_BOOL), intent(in) :: lPhaseDormancyEnabledIn
+
+    call SetPhaseDormancyEnabled(lPhaseDormancyEnabledIn)
+
+    return
+  end subroutine SetPhaseDormancyEnabledISO
+
   subroutine ClearPhaseExclusionsISO() &
     bind(C, name="TCAPI_clearPhaseExclusions")
 
@@ -1265,6 +1345,18 @@ subroutine SetFuzzyStoichISO(lFuzzyStoichIn) &
 
     return
   end subroutine ClearPhaseExclusionsISO
+
+  subroutine ClearPhaseDormancyISO() &
+    bind(C, name="TCAPI_clearPhaseDormancy")
+
+    USE,INTRINSIC :: ISO_C_BINDING
+
+    implicit none
+
+    call ClearPhaseDormancy
+
+    return
+  end subroutine ClearPhaseDormancyISO
 
   subroutine AddPhaseExcludedISO(cPhaseName, lcPhaseName) &
     bind(C, name="TCAPI_addPhaseExcluded")
@@ -1299,6 +1391,55 @@ subroutine SetFuzzyStoichISO(lFuzzyStoichIn) &
 
     return
   end subroutine AddPhaseExcludedExceptISO
+
+  subroutine AddPhaseDormantISO(cPhaseName, lcPhaseName) &
+    bind(C, name="TCAPI_addPhaseDormant")
+
+    USE,INTRINSIC :: ISO_C_BINDING
+
+    implicit none
+
+    character(kind=c_char,len=1), target, intent(in) :: cPhaseName(*)
+    integer(c_size_t), intent(in), value             :: lcPhaseName
+    character(kind=c_char,len=lcPhaseName), pointer  :: fPhaseName
+
+    call c_f_pointer(cptr=c_loc(cPhaseName), fptr=fPhaseName)
+    call AddPhaseDormant(fPhaseName)
+
+    return
+  end subroutine AddPhaseDormantISO
+
+  subroutine AddPhaseDormantExceptISO(cPhaseName, lcPhaseName) &
+    bind(C, name="TCAPI_addPhaseDormantExcept")
+
+    USE,INTRINSIC :: ISO_C_BINDING
+
+    implicit none
+
+    character(kind=c_char,len=1), target, intent(in) :: cPhaseName(*)
+    integer(c_size_t), intent(in), value             :: lcPhaseName
+    character(kind=c_char,len=lcPhaseName), pointer  :: fPhaseName
+
+    call c_f_pointer(cptr=c_loc(cPhaseName), fptr=fPhaseName)
+    call AddPhaseDormantExcept(fPhaseName)
+
+    return
+  end subroutine AddPhaseDormantExceptISO
+
+  subroutine GetDormantPhaseCandidateSummaryISO(iPurePhaseIndexOut, dPureDrivingForceOut, iSolnPhaseIndexOut, dSolnDrivingForceOut, iAddOrderOut) &
+    bind(C, name="TCAPI_getDormantPhaseCandidateSummary")
+
+    USE,INTRINSIC :: ISO_C_BINDING
+
+    implicit none
+
+    integer(C_INT), intent(out) :: iPurePhaseIndexOut, iSolnPhaseIndexOut, iAddOrderOut
+    real(C_DOUBLE), intent(out) :: dPureDrivingForceOut, dSolnDrivingForceOut
+
+    call GetDormantPhaseCandidateSummary(iPurePhaseIndexOut, dPureDrivingForceOut, iSolnPhaseIndexOut, dSolnDrivingForceOut, iAddOrderOut)
+
+    return
+  end subroutine GetDormantPhaseCandidateSummaryISO
 
   subroutine GetSystemGibbsEnergyISO(dGibbsEnergyOut) &
     bind(C, name="TCAPI_getSystemGibbsEnergy")

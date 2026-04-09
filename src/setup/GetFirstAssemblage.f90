@@ -56,12 +56,14 @@
 subroutine GetFirstAssemblage
 
     USE ModuleThermo
+    USE ModuleThermoIO, ONLY: INFOThermo
 
     implicit none
 
-    integer::                               i
+    integer::                               i, j, k, kDormant
     integer,dimension(nSpecies,nElements):: iAtomFractionSpecies
     real(8),dimension(nSpecies,nElements):: dTempArr
+    logical                                :: IsSpeciesDormant
 
 
     ! The following is a temporary integer matrix with equivalent dimensions to dAtomFractionSpecies
@@ -89,10 +91,40 @@ subroutine GetFirstAssemblage
     ! species with a positive standard Gibbs energy.  The MASK feature is utilized
     ! to ensure that pure species with a positive standard Gibbs energy are considered.
 
-    iAssemblage = MINLOC(dTempArr, DIM = 1, MASK = iAtomFractionSpecies /= 0)
+    iAssemblage = 0
+    do j = 1, nElements
+        k = 0
+        kDormant = 0
+        do i = 1, nSpecies
+            if (iAtomFractionSpecies(i,j) == 0) cycle
+            if (IsSpeciesDormant(i)) then
+                if (kDormant == 0) then
+                    kDormant = i
+                else if (dTempArr(i,j) < dTempArr(kDormant,j)) then
+                    kDormant = i
+                end if
+                cycle
+            end if
+            if (k == 0) then
+                k = i
+            else if (dTempArr(i,j) < dTempArr(k,j)) then
+                k = i
+            end if
+        end do
+        ! Dormant pure species can still provide a temporary Leveling carrier when
+        ! no active pure carrier exists for an element. They are removed again before
+        ! the active GEM assemblage is constructed.
+        if (k == 0) k = kDormant
+        if (k == 0) then
+            INFOThermo = 10
+            return
+        end if
+        iAssemblage(j) = k
+    end do
 
     ! Establish the first adjustment to the element potentials:
     do i = 1, nElements
+        if (iAssemblage(i) == 0) return
         dLevel(i) = dChemicalPotential(iAssemblage(i))
     end do
 

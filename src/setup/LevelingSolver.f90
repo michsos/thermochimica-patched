@@ -107,6 +107,7 @@ subroutine LevelingSolver
     implicit none
 
     integer :: iter, i, n, m, k
+    logical :: IsSpeciesDormant
 
 
     ! Initialize variables:
@@ -201,8 +202,14 @@ subroutine LevelingSolver
         ! Update the element potentials:
         dElementPotential = dElementPotential + dLevel
 
-        ! Levelling is complete when all chemical potentials are non-negative (within tolerance):
-        if (MINVAL(dChemicalPotential) >= dTolerance(4)) exit LOOP_Leveling
+        ! Levelling is complete when all add-eligible species are non-negative
+        ! (within tolerance). Dormant species are diagnostic-only in this path and
+        ! must not force new active assemblages.
+        do i = 1, nSpecies
+            if (IsSpeciesDormant(i)) cycle
+            if (dChemicalPotential(i) < dTolerance(4)) exit
+        end do
+        if (i > nSpecies) exit LOOP_Leveling
 
         ! Determine the next phase assemblage to be tested:
         call GetNewAssemblage(iter)

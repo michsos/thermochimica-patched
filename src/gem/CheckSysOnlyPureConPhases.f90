@@ -71,6 +71,7 @@ subroutine CheckSysOnlyPureConPhases
     real(8), dimension(nElements,nElements) :: A, AA
     real(8), dimension(nElements)           :: B, BB
     real(8)                                 :: dTemp
+    logical                                 :: IsPureConSpeciesDormant
 
 
     ! Initialize variables:
@@ -85,7 +86,7 @@ subroutine CheckSysOnlyPureConPhases
     ! These should be removed
     if (iterGlobal == 0) then
         do i = 1, nConPhases
-            if (dMolesPhase(i) < dTolerance(7)) then
+            if (IsPureConSpeciesDormant(iAssemblage(i)) .OR. (dMolesPhase(i) < dTolerance(7))) then
                 iAssemblage(i) = iAssemblage(nConPhases)
                 iAssemblage(nConPhases)   = 0
                 dTemp                     = dMolesPhase(i)

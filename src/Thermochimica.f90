@@ -437,6 +437,9 @@ subroutine ThermochimicaSetup
     ! ChemSage data-file:
     if (INFOThermo == 0) call CompThermoData
 
+    ! Resolve dormant masks only after the final system/species arrays exist.
+    if (INFOThermo == 0) call ResolveDormantPhaseMasks
+
     ! Check the thermodynamic database to ensure that it is appropriate:
     if (INFOThermo == 0) call CheckThermoData
 
@@ -450,7 +453,7 @@ subroutine ThermochimicaSolver
 
     ! Check is load is requested and data available:
     lReinitLoaded = .FALSE.
-    if ((INFOThermo == 0) .AND. lReinitRequested .AND. lReinitAvailable) call LoadReinitData
+    if ((INFOThermo == 0) .AND. lReinitRequested .AND. lReinitAvailable .AND. (.NOT. lPhaseDormancyActive)) call LoadReinitData
 
     ! Estimate the equilibrium phase assemblage and other important properties
     ! using the Leveling algorithm:

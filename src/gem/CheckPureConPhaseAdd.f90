@@ -77,6 +77,7 @@ subroutine CheckPureConPhaseAdd(iMaxDrivingForce, dMaxDrivingForce)
     integer :: iPhaseChange, iMaxDrivingForce
     real(8) :: dMaxDrivingForce
     logical :: lSwapLater, lSwapCheck, lPhasePass
+    logical :: IsPureConSpeciesDormant
 
 
     ! Initialize variables:
@@ -97,6 +98,8 @@ subroutine CheckPureConPhaseAdd(iMaxDrivingForce, dMaxDrivingForce)
     IF_CheckDrivingForce: if ((iMaxDrivingForce /= 0).AND.(dMaxDrivingForce < dTolerance(4))) then
         ! The pure condensed phase that is to be added has the maximum driving force:
         iPhaseChange = iMaxDrivingForce
+
+        if (IsPureConSpeciesDormant(iPhaseChange)) return
 
         ! Only proceed if the phase is a pure condensed phase and that the Gibbs Phase Rule will not be violated:
         if ((iPhase(iPhaseChange) == 0).AND.(nConPhases + nSolnPhases < nElements - nChargedConstraints)) then

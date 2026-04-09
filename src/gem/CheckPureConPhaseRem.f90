@@ -58,6 +58,7 @@
 subroutine CheckPureConPhaseRem
 
     USE ModuleThermo
+    USE ModuleThermoIO, ONLY: lFreezePhaseAssemblage
     USE ModuleGEMSolver
 
     implicit none
@@ -72,6 +73,8 @@ subroutine CheckPureConPhaseRem
     ! Initialize variables:
     dTempVec(1:nConPhases) = -dMolesPhase(1:nConPhases)
     iTempVec               = 0
+
+    if (lFreezePhaseAssemblage) return
 
     ! Return if the smallest value of dMolesPhase is already above the tolerance:
     if (MINVAL(dMolesPhase(1:nConPhases)) > dTolerance(7)) return

@@ -66,6 +66,7 @@ subroutine PostLevelingSolver
     real(8),dimension(nElements)::            dTempVecE, dMolesPhaseOld, dElementPotentialOld
     real(8),dimension(nSpecies)::             dChemicalPotentialOld
     real(8),dimension(nElements,nElements)::  A
+    logical                                   :: IsSpeciesDormant
 
 
     ! Initialize variables:
@@ -123,9 +124,17 @@ subroutine PostLevelingSolver
         ! Readjust the Relative Gibbs Energies (dRelGibbsEnergy) of all species and phases in the system:
         dChemicalPotential = dChemicalPotential - MATMUL(dAtomFractionSpecies,dLevel)
 
-        i = MAXVAL(MINLOC(dChemicalPotential))
+        i = 0
+        do j = 1, nSpecies
+            if (IsSpeciesDormant(j)) cycle
+            if (i == 0) then
+                i = j
+            else if (dChemicalPotential(j) < dChemicalPotential(i)) then
+                i = j
+            end if
+        end do
 
-        if ((dChemicalPotential(i) > dTolerance(4)).OR.(iterpl == nElements)) exit LOOP_POSTLEVEL
+        if ((i == 0).OR.(dChemicalPotential(i) > dTolerance(4)).OR.(iterpl == nElements)) exit LOOP_POSTLEVEL
 
         ! Establish a new phase assemblage:
         call GetNewAssemblage(iterpl)
@@ -133,14 +142,18 @@ subroutine PostLevelingSolver
     end do LOOP_POSTLEVEL
 
 
-    if (MINVAL(dChemicalPotential) < dTolerance(4)) then
-        ! PostLevelling was unable to improve estimates from Leveling.  Return the estimates to their
-        ! previous state.
-        iAssemblage        = iAssemblageOld
-        dMolesPhase        = dMolesPhaseOld
-        dChemicalPotential = dChemicalPotentialOld
-        dElementPotential  = dElementPotentialOld
-    end if
+    do i = 1, nSpecies
+        if (IsSpeciesDormant(i)) cycle
+        if (dChemicalPotential(i) < dTolerance(4)) then
+            ! PostLevelling was unable to improve estimates from Leveling.  Return the estimates to their
+            ! previous state.
+            iAssemblage        = iAssemblageOld
+            dMolesPhase        = dMolesPhaseOld
+            dChemicalPotential = dChemicalPotentialOld
+            dElementPotential  = dElementPotentialOld
+            exit
+        end if
+    end do
 
     ! Verify that none of the predicted stable phases are dummy phases:
     do i = 1, nElements

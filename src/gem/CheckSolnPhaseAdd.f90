@@ -86,6 +86,7 @@ subroutine CheckSolnPhaseAdd
     integer                           :: i, j
     integer,dimension(nSolnPhasesSys) :: iTempVec
     logical                           :: lSwapLater, lPhasePass, lSwapCheck
+    logical                           :: IsSolutionPhaseDormant
 
 
     ! Initialize variables:
@@ -112,6 +113,9 @@ subroutine CheckSolnPhaseAdd
 
         ! Skip this phase if it is already part of the assemblage:
         if (lSolnPhases(i)) cycle LOOP_SolnPhaseAdd
+
+        ! Dormant solution phases stay in-system for diagnostics only.
+        if (IsSolutionPhaseDormant(i)) cycle LOOP_SolnPhaseAdd
 
         ! Only add a miscible phase if the functional norm is below a certain value:
        ! if ((lMiscibility(i)).AND.(dGEMFunctionNorm > 1D-4)) cycle LOOP_SolnPhaseAdd
