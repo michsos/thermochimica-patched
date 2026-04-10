@@ -379,6 +379,8 @@ subroutine CheckSystemExcess
                                     dSublatticeChargeCS(k,1,iConstituentSublatticeCS(k,1,c))
                             dGibbsCoeffSpeciesTemp(12,l)  = dGibbsCoeffSpeciesTemp(12,l)  / &
                                     dSublatticeChargeCS(k,1,iConstituentSublatticeCS(k,1,c))
+                            dGibbsCoeffSpeciesTemp(14,l)  = dGibbsCoeffSpeciesTemp(14,l)  / &
+                                    dSublatticeChargeCS(k,1,iConstituentSublatticeCS(k,1,c))
                         end do
                     end if
                 end do LOOP_findPassed2

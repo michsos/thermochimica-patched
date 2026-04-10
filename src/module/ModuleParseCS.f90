@@ -78,7 +78,7 @@ module ModuleParseCS
     integer                                     :: nParamCS, nCountSublatticeCS, nMaxSpeciesPhaseCS, nMagParamCS
     integer,        parameter                   :: nSolnPhasesSysMax = 100, nMaxSublatticeCS = 5
     integer,        parameter                   :: nSolnTypeSupport = 11
-    integer,        parameter                   :: nGibbsCoeff = 13, nMaxGibbsEqs = 6, nParamMax = 4
+    integer,        parameter                   :: nGibbsCoeff = 15, nMaxGibbsEqs = 6, nParamMax = 4
     integer,        dimension(:),   allocatable :: nSpeciesPhaseCS, nGibbsEqSpecies, iPhaseCS, iParticlesPerMoleCS
     integer,        dimension(:),   allocatable :: nParamPhaseCS, iParamPassCS, nSublatticePhaseCS, iPhaseSublatticeCS
     integer,        dimension(:),   allocatable :: iMagParamPassCS, nMagParamPhaseCS, iSUBIMixTypeCS

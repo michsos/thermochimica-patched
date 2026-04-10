@@ -169,12 +169,8 @@ subroutine ParseCSDataBlockGibbs(i,j,iCounterGibbsEqn)
             backspace(UNIT = 1)
        end if
 
-        if (l == 1) then
-            read (1,*, IOSTAT = INFO) iDummy, dGibbsCoeffSpeciesTemp(8:9, iCounterGibbsEqn)
-        elseif (l == 2) then
-            read (1,*, IOSTAT = INFO) iDummy, dGibbsCoeffSpeciesTemp(8:11,iCounterGibbsEqn)
-        elseif (l == 3) then
-            read (1,*, IOSTAT = INFO) iDummy, dGibbsCoeffSpeciesTemp(8:13,iCounterGibbsEqn)
+        if ((l >= 1).AND.(7 + 2 * l <= nGibbsCoeff)) then
+            read (1,*, IOSTAT = INFO) iDummy, dGibbsCoeffSpeciesTemp(8:(7 + 2 * l),iCounterGibbsEqn)
         elseif (l == 0) then
             ! Do nothing... except still have to read a line for 4 or 16.
             if ((iGibbsEqType == 16).OR.(iGibbsEqType == 4)) then
