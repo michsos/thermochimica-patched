@@ -104,6 +104,7 @@ subroutine ShuffleAssemblage(iNewPhase,iPhaseTypeOut)
     implicit none
 
     integer                      :: i, j, k, l, iNewPhase, iPhaseTypeOut, iAssemblageSum, iMisciblePhaseID
+    integer                      :: nConPhasesOld, nSolnPhasesOld
     integer,dimension(nElements) :: iVec, iVecB, iTempVec
     real(8)                      :: dTemp
     real(8),dimension(nElements) :: dEuclideanNorm, dTempVec
@@ -115,9 +116,11 @@ subroutine ShuffleAssemblage(iNewPhase,iPhaseTypeOut)
     dEuclideanNorm   = 1D3
 
     ! Store the current phase assemblage and mole vector in case if a failure is encountered:
-    iTempVec       = iAssemblage
-    iAssemblageSum = SUM(iAssemblage)
-    dTempVec       = dMolesPhase
+    iTempVec        = iAssemblage
+    iAssemblageSum  = SUM(iAssemblage)
+    dTempVec        = dMolesPhase
+    nConPhasesOld   = nConPhases
+    nSolnPhasesOld  = nSolnPhases
 
     ! Compute the effective stoichiometry of each solution phase predicted to be stable:
     do i = 1, nSolnPhases
@@ -253,6 +256,15 @@ subroutine ShuffleAssemblage(iNewPhase,iPhaseTypeOut)
                 dMolesPhase(nElements - k + 1) = dEuclideanNorm(j)
             end if
         end do
+
+        ! Update phase counts to match the rebuilt layout.  The old
+        ! nConPhases / nSolnPhases may disagree with the actual number
+        ! of positive / negative entries placed by the loop above,
+        ! which would leave zero entries inside the "valid" range and
+        ! cause out-of-bounds accesses elsewhere in the solver.
+        nConPhases  = l
+        nSolnPhases = k
+
     end if IF_Euclid
 
     ! Check to make sure the phase assemblage contains the same selection of phases, otherwise revert:
@@ -261,6 +273,8 @@ subroutine ShuffleAssemblage(iNewPhase,iPhaseTypeOut)
     if (iAssemblageSUM /= j) then
         iAssemblage = iTempVec
         dMolesPhase = dTempVec
+        nConPhases  = nConPhasesOld
+        nSolnPhases = nSolnPhasesOld
     end if
 
     return

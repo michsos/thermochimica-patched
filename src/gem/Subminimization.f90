@@ -116,58 +116,79 @@ subroutine Subminimization(iSolnPhaseIndex,lPhasePass)
     USE ModuleThermo
     USE ModuleSubMin
     uSE ModuleGEMSolver!, ONLY: lMiscibility, dDrivingForceSoln
-    USE ModuleThermoIO
+    USE ModuleThermoIO, ONLY: INFOThermo
 
     implicit none
 
     integer :: iterSub,    iSolnPhaseIndex, iterSubMax
-    logical :: lPhasePass, lDuplicate
+    integer :: nConstraints
+    logical :: lPhasePass, lDuplicate, lZeroDOF
 
 
     ! Initialize local variables:
     lPhasePass = .FALSE.
     lDuplicate = .FALSE.
+    lZeroDOF   = .FALSE.
 
     ! Initialize the subminimization subroutine:
     call SubMinInit(iSolnPhaseIndex,iterSubMax)
 
-    ! Subminimization iteration loop:
-    LOOP_IterSub: do iterSub = 1, iterSubMax
-        ! Compute the Newton direction vector:
-        call SubMinNewton(iSolnPhaseIndex)
+    ! Determine the number of equality constraints on the composition:
+    !   - 1 for the sum-of-mole-fractions = 1 constraint (always present)
+    !   - 1 for charge neutrality (if the phase is ionic)
+    nConstraints = 1
+    if (iPhaseElectronID(iSolnPhaseIndex) /= 0) nConstraints = nConstraints + 1
 
-        ! Compute an appropriate step length:
-        call SubMinLineSearch(iSolnPhaseIndex)
+    ! Check for zero compositional degrees of freedom (nVar <= nConstraints).
+    ! This occurs for e.g. a 2-end-member charge-neutral SUBL phase like Melilite,
+    ! where the composition is fully determined by the constraints.
+    ! In this case the standard Newton solver fails because the Hessian is
+    ! over-determined, and the function norm check incorrectly zeros the
+    ! driving force.
+    if (nVar <= nConstraints) then
+        lZeroDOF = .TRUE.
+        call SubMinZeroDOF(iSolnPhaseIndex, lPhasePass)
+    end if
 
-        ! Compute the functional norm:
-        call SubMinFunctionNorm(iSolnPhaseIndex)
+    if (.NOT. lZeroDOF) then
+        ! Subminimization iteration loop:
+        LOOP_IterSub: do iterSub = 1, iterSubMax
+            ! Compute the Newton direction vector:
+            call SubMinNewton(iSolnPhaseIndex)
 
-        ! Check if the minimum mole fraction is below a certain tolerance:
-        if (MINVAL(dMolFraction(iFirst:iLast)) < dMinMoleFraction) exit LOOP_IterSub
+            ! Compute an appropriate step length:
+            call SubMinLineSearch(iSolnPhaseIndex)
 
-        ! Only check for convergence if the functional norm is below tolerance:
-        if (dSubMinFunctionNorm < dTolerance(1)) then
-            ! Check convergence:
-            if ((dDrivingForce <= dTolerance(4)).AND. .NOT.(lMiscibility(iSolnPhaseIndex))) lSubMinConverged = .TRUE.
-        end if
-        ! Exit if the subminimization has converged:
-        if ((lSubMinConverged).OR.(INFOThermo /= 0)) exit LOOP_IterSub
-        ! Check if the solution phases represening the miscibility gap duplicate one another:
-        if (lMiscibility(iSolnPhaseIndex)) call SubMinCheckDuplicate(lDuplicate)
-        ! Exit if the subminimization has converged:
-        if (lDuplicate) exit LOOP_IterSub
-    end do LOOP_IterSub
+            ! Compute the functional norm:
+            call SubMinFunctionNorm(iSolnPhaseIndex)
 
-    ! If the composition of phases representing a miscibility gap duplicate one another (i.e., they have virtually
-    ! the same composition), then set the driving force to zero to prevent this phase from being added to the system.
-    if (lDuplicate) dDrivingForce = 0D0
+            ! Check if the minimum mole fraction is below a certain tolerance:
+            if (MINVAL(dMolFraction(iFirst:iLast)) < dMinMoleFraction) exit LOOP_IterSub
 
-    ! If the mole fraction and charge neutrality constraints were not satisfied, then set the driving force to zero:
-    if (dSubMinFunctionNorm > 10D0*dTolerance(1)) dDrivingForce = 0D0
+            ! Only check for convergence if the functional norm is below tolerance:
+            if (dSubMinFunctionNorm < dTolerance(1)) then
+                ! Check convergence:
+                if ((dDrivingForce <= dTolerance(4)).AND. .NOT.(lMiscibility(iSolnPhaseIndex))) lSubMinConverged = .TRUE.
+            end if
+            ! Exit if the subminimization has converged:
+            if ((lSubMinConverged).OR.(INFOThermo /= 0)) exit LOOP_IterSub
+            ! Check if the solution phases represening the miscibility gap duplicate one another:
+            if (lMiscibility(iSolnPhaseIndex)) call SubMinCheckDuplicate(lDuplicate)
+            ! Exit if the subminimization has converged:
+            if (lDuplicate) exit LOOP_IterSub
+        end do LOOP_IterSub
 
-    ! If the driving force is less than a specified tolerance and the system has converged,
-    ! add this solution phase to the system:
-    if ((dDrivingForce < dTolerance(4)).AND.(lSubMinConverged)) lPhasePass = .TRUE.
+        ! If the composition of phases representing a miscibility gap duplicate one another (i.e., they have virtually
+        ! the same composition), then set the driving force to zero to prevent this phase from being added to the system.
+        if (lDuplicate) dDrivingForce = 0D0
+
+        ! If the mole fraction and charge neutrality constraints were not satisfied, then set the driving force to zero:
+        if (dSubMinFunctionNorm > 10D0*dTolerance(1)) dDrivingForce = 0D0
+
+        ! If the driving force is less than a specified tolerance and the system has converged,
+        ! add this solution phase to the system:
+        if ((dDrivingForce < dTolerance(4)).AND.(lSubMinConverged)) lPhasePass = .TRUE.
+    end if
 
     ! Update the solution driving force:
     dDrivingForceSoln(iSolnPhaseIndex) = dDrivingForce
@@ -311,6 +332,101 @@ end subroutine SubMinInit
     ! Purpose:
     ! ========
     !
+    ! The purpose of this subroutine is to handle solution phases whose
+    ! composition is fully determined by equality constraints (zero degrees
+    ! of compositional freedom).  This occurs when the number of end-members
+    ! (nVar) is less than or equal to the number of constraints (1 for the
+    ! sum-of-mole-fractions, plus 1 for charge neutrality if ionic).
+    !
+    ! Example: A 2-end-member charge-neutral SUBL phase like Melilite, where
+    ! charge neutrality (x1*q1 + x2*q2 = 0) combined with sum (x1 + x2 = 1)
+    ! uniquely determines x1 and x2.
+    !
+    ! The standard SubMinNewton solver fails for such phases because the
+    ! Hessian is over-determined (nVar+2 equations for nVar unknowns with
+    ! nVar constraints), causing ArrowSolver to return a singular system.
+    ! The function norm then exceeds tolerance, and the driving force is
+    ! incorrectly zeroed at line 166 of the main Subminimization routine.
+    !
+    ! This subroutine:
+    !   1. Solves the constraints analytically for the mole fractions
+    !   2. Computes the chemical potential at that fixed composition
+    !   3. Computes the driving force WITHOUT the /nVar normalization
+    !   4. Sets lPhasePass if the driving force is sufficiently negative
+    !
+    !---------------------------------------------------------------------------
+
+subroutine SubMinZeroDOF(iSolnPhaseIndex, lPhasePass)
+
+    USE ModuleThermo
+    USE ModuleSubMin
+
+    implicit none
+
+    integer, intent(in)  :: iSolnPhaseIndex
+    logical, intent(out) :: lPhasePass
+    integer :: i, j, k
+    real(8) :: dQ1, dQ2
+
+    lPhasePass = .FALSE.
+
+    if (nVar == 2 .AND. iPhaseElectronID(iSolnPhaseIndex) /= 0) then
+        ! Two end-members with a charge neutrality constraint.
+        ! Solve analytically: x1 + x2 = 1, x1*q1 + x2*q2 = 0.
+        ! Solution: x1 = -q2/(q1-q2), x2 = q1/(q1-q2).
+        k  = iPhaseElectronID(iSolnPhaseIndex)
+        dQ1 = dStoichSpecies(iFirst, k)
+        dQ2 = dStoichSpecies(iLast,  k)
+
+        if (DABS(dQ1 - dQ2) > 1D-15) then
+            dMolFraction(iFirst) = -dQ2 / (dQ1 - dQ2)
+            dMolFraction(iLast)  =  dQ1 / (dQ1 - dQ2)
+        else
+            ! Degenerate case: same charges, neutrality is trivial.
+            dMolFraction(iFirst) = 0.5D0
+            dMolFraction(iLast)  = 0.5D0
+        end if
+    else if (nVar == 1) then
+        ! Single species; composition is trivially 1.
+        dMolFraction(iFirst) = 1D0
+    else
+        ! General zero-DOF case not yet handled.
+        return
+    end if
+
+    ! Abort if any mole fraction is non-positive (unphysical):
+    if (MINVAL(dMolFraction(iFirst:iLast)) <= 0D0) return
+
+    ! Compute chemical potentials at the constrained composition:
+    call SubMinChemicalPotential(iSolnPhaseIndex)
+
+    ! Compute the driving force directly (no /nVar normalization):
+    dDrivingForce = 0D0
+    do j = 1, nVar
+        i = iFirst + j - 1
+        dDrivingForce = dDrivingForce + dMolFraction(i) &
+            * (dChemicalPotential(i) - dChemicalPotentialStar(j))
+    end do
+
+    ! The function norm is satisfied by construction:
+    dSubMinFunctionNorm = 0D0
+    lSubMinConverged    = .TRUE.
+
+    ! If the driving force is sufficiently negative, mark the phase for addition:
+    if (dDrivingForce < dTolerance(4)) lPhasePass = .TRUE.
+
+end subroutine SubMinZeroDOF
+
+
+!-------------------------------------------------------------------------------------------------------------
+!-------------------------------------------------------------------------------------------------------------
+!-------------------------------------------------------------------------------------------------------------
+
+    !---------------------------------------------------------------------------
+    !
+    ! Purpose:
+    ! ========
+    !
     ! The purpose of this subroutine is to compute the chemical potentials of
     ! only the constituents of this solution phase.
     !
@@ -339,6 +455,7 @@ subroutine SubMinChemicalPotential(iSolnPhaseIndex)
     ! Initialize variables:
     dChemicalPotential(iFirst:iLast)  = 0D0
     dPartialExcessGibbs(iFirst:iLast) = 0D0
+    dGibbsSolnPhase(iSolnPhaseIndex)  = 0D0
 
     ! Compute excess terms based on solution phase type:
     call CompExcessGibbsEnergy(iSolnPhaseIndex)

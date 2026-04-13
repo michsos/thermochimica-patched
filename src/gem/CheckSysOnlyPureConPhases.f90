@@ -83,9 +83,12 @@ subroutine CheckSysOnlyPureConPhases
     BB   = 0D0
 
     ! If this comes straight from levelling, phases may have 0 moles
-    ! These should be removed
+    ! These should be removed.  Iterate backwards so that the swap-with-last
+    ! removal does not skip newly-moved entries (forward iteration left gaps
+    ! when consecutive phases were dormant, causing index-0 access at line 103).
     if (iterGlobal == 0) then
-        do i = 1, nConPhases
+        i = nConPhases
+        do while (i >= 1)
             if (IsPureConSpeciesDormant(iAssemblage(i)) .OR. (dMolesPhase(i) < dTolerance(7))) then
                 iAssemblage(i) = iAssemblage(nConPhases)
                 iAssemblage(nConPhases)   = 0
@@ -94,6 +97,7 @@ subroutine CheckSysOnlyPureConPhases
                 dMolesPhase(nConPhases)   = 0D0
                 nConPhases                = nConPhases - 1
             end if
+            i = i - 1
         end do
     end if
 

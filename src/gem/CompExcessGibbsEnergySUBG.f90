@@ -151,6 +151,11 @@ subroutine CompExcessGibbsEnergySUBG(iSolnIndex)
         end do
         dSum = dSum + dNi(i)
     end do
+    ! Guard: if total cation moles is zero, the phase is empty — return early.
+    if (dSum <= 0D0) then
+        deallocate(dXi, dYi, dFi, dNi, dXij, dNij, dXsij, dNsij, lAsymmetric1, lAsymmetric2)
+        return
+    end if
     do i = 1, nSub1
         dXi(i) = dNi(i) / dSum
     end do
@@ -173,6 +178,11 @@ subroutine CompExcessGibbsEnergySUBG(iSolnIndex)
         end do
         dSum = dSum + dNi(j)
     end do
+    ! Guard: if total anion moles is zero, the phase is empty — return early.
+    if (dSum <= 0D0) then
+        deallocate(dXi, dYi, dFi, dNi, dXij, dNij, dXsij, dNsij, lAsymmetric1, lAsymmetric2)
+        return
+    end if
     do i = 1, nSub2
         j = i + nSub1
         dXi(j) = dNi(j) / dSum
@@ -214,6 +224,12 @@ subroutine CompExcessGibbsEnergySUBG(iSolnIndex)
         end do
     end do
 
+    ! Guard: if pair sums are zero, cannot compute pair fractions — return early.
+    if (dSumNij <= 0D0 .OR. dSumNsij <= 0D0) then
+        deallocate(dXi, dYi, dFi, dNi, dXij, dNij, dXsij, dNsij, lAsymmetric1, lAsymmetric2)
+        return
+    end if
+
     do i = 1, nSub1
         do j = 1, nSub2
             dXij(i,j)  = dNij(i,j)  / dSumNij
@@ -249,20 +265,20 @@ subroutine CompExcessGibbsEnergySUBG(iSolnIndex)
         ! Loop over n_i contributions to entropy
         ! Cations first
         do i = 1, nSub1
-            if (i == iPairID(iSPI,k,1))  then
+            if (i == iPairID(iSPI,k,1) .AND. dXi(i) > 0D0)  then
                 dConfEntropy = dConfEntropy + (DLOG(dXi(i)) / dZa)
             end if
-            if (i == iPairID(iSPI,k,2))  then
+            if (i == iPairID(iSPI,k,2) .AND. dXi(i) > 0D0)  then
                 dConfEntropy = dConfEntropy + (DLOG(dXi(i)) / dZb)
             end if
         end do
         ! Now anions
         do i = 1, nSub2
             j = i + nSub1
-            if (j == iPairID(iSPI,k,3))  then
+            if (j == iPairID(iSPI,k,3) .AND. dXi(j) > 0D0)  then
                 dConfEntropy = dConfEntropy + (DLOG(dXi(j)) / dZx)
             end if
-            if (j == iPairID(iSPI,k,4))  then
+            if (j == iPairID(iSPI,k,4) .AND. dXi(j) > 0D0)  then
                 dConfEntropy = dConfEntropy + (DLOG(dXi(j)) / dZy)
             end if
         end do
@@ -292,7 +308,8 @@ subroutine CompExcessGibbsEnergySUBG(iSolnIndex)
                         m = kk
                     end if
                 end do
-                dConfEntropy = dConfEntropy + (DLOG(dXsij(i,j) / (dFi(i) * dFi(j + nSub1))) &
+                dConfEntropy = dConfEntropy + (DLOG(MAX(dXsij(i,j), 1D-100) &
+                            / MAX(dFi(i) * dFi(j + nSub1), 1D-100)) &
                             * (nA * nX / dZetaSpecies(iSPI,m)))
             end do
         end do
@@ -534,6 +551,8 @@ subroutine CompExcessGibbsEnergySUBG(iSolnIndex)
         end if
 
         dXiDen = dXi1 + dXi2
+        ! Guard: skip this parameter if denominator is zero (component absent).
+        if (dChiDen <= 0D0) cycle LOOP_Param
         dChi1 = dChi1 / dChiDen
         dChi2 = dChi2 / dChiDen
 
@@ -547,6 +566,8 @@ subroutine CompExcessGibbsEnergySUBG(iSolnIndex)
                 if (d == iPairID(iSPI,k,2) .AND. xx == iPairID(iSPI,k,3)) dYdk = dYdk + (dMolFraction(l) / 4)
                 if (d == iPairID(iSPI,k,2) .AND. xx == iPairID(iSPI,k,4)) dYdk = dYdk + (dMolFraction(l) / 4)
             end do
+            ! Guard: skip ternary factor if denominator is zero (ternary constituent absent).
+            if (dYdk <= 0D0) cycle LOOP_Param
             if (lAsymmetric2(d)) then
                 dYjk = 0D0
                 do k = 1, nPairsSRO(iSPI,2)
@@ -556,6 +577,7 @@ subroutine CompExcessGibbsEnergySUBG(iSolnIndex)
                     if (b == iPairID(iSPI,k,2) .AND. xx == iPairID(iSPI,k,3)) dYjk = dYjk + (dMolFraction(l) / 4)
                     if (b == iPairID(iSPI,k,2) .AND. xx == iPairID(iSPI,k,4)) dYjk = dYjk + (dMolFraction(l) / 4)
                 end do
+                if (dXi2 <= 0D0) cycle LOOP_Param
                 dTernaryFactorG = (dYdk / dXi2) * (1 - (dYjk / dXi2))**(r-1)
             else if (lAsymmetric1(d)) then
                 dYik = 0D0
@@ -566,6 +588,7 @@ subroutine CompExcessGibbsEnergySUBG(iSolnIndex)
                     if (a == iPairID(iSPI,k,2) .AND. xx == iPairID(iSPI,k,3)) dYik = dYik + (dMolFraction(l) / 4)
                     if (a == iPairID(iSPI,k,2) .AND. xx == iPairID(iSPI,k,4)) dYik = dYik + (dMolFraction(l) / 4)
                 end do
+                if (dXi1 <= 0D0) cycle LOOP_Param
                 dTernaryFactorG = (dYdk / dXi1) * (1 - (dYik / dXi1))**(r-1)
             else
                 dTernaryFactorG = dYdk * (1D0 - dXi1 - dXi2)**(r-1D0)
@@ -580,12 +603,14 @@ subroutine CompExcessGibbsEnergySUBG(iSolnIndex)
             dDgexBase = -dGex * (p + q) / dChiDen
         ! Q-type binary terms
         else if (cRegularParam(abxy) == 'Q') then
+            if (dXiDen <= 0D0) cycle LOOP_Param
             dGex = (dExcessGibbsParam(abxy) * dXi1**p * dXi2**q / (dXiDen**(p + q))) * dTernaryFactorG
             dDgexBase = -dGex * (p + q) / dXiDen
         ! B-type binary terms
         else if ((cRegularParam(abxy) == 'B') .OR. (cRegularParam(abxy) == 'H')) then
             ! Start by calculating mixing energy term
             dXtot = dXsij(a,x) + dXsij(b,y)
+            if (dXtot <= 0D0) cycle LOOP_Param
             dGex = dExcessGibbsParam(abxy) * dXsij(a,x)**(1D0+p) * dXsij(b,y)**(1D0+q) / dXtot**(1D0+p+q)
             dDgexBase = - dGex / dSumNsij
             LOOP_Bder: do i = 1, nSub1
@@ -594,10 +619,14 @@ subroutine CompExcessGibbsEnergySUBG(iSolnIndex)
                     if ((i == a) .AND. (j == x)) then
                         ! the if below is just to prove that there are numerical issues with this mixing scheme
                         ! if (iterGlobal > 10) then
-                        dDgex = dDgex + dGex*(dNsij(b,y) + dNsij(b,y)*p - dNsij(a,x)*q) / (dNsij(a,x) * (dNsij(b,y) + dNsij(a,x)))
+                        if (dNsij(a,x) > 0D0 .AND. (dNsij(b,y) + dNsij(a,x)) > 0D0) then
+                            dDgex = dDgex + dGex*(dNsij(b,y) + dNsij(b,y)*p - dNsij(a,x)*q) / (dNsij(a,x) * (dNsij(b,y) + dNsij(a,x)))
+                        end if
                         ! end if
                     else if ((i == b) .AND. (j == y)) then
-                        dDgex = dDgex + dGex*(dNsij(a,x) - dNsij(b,y)*p + dNsij(a,x)*q) / (dNsij(b,y) * (dNsij(b,y) + dNsij(a,x)))
+                        if (dNsij(b,y) > 0D0 .AND. (dNsij(b,y) + dNsij(a,x)) > 0D0) then
+                            dDgex = dDgex + dGex*(dNsij(a,x) - dNsij(b,y)*p + dNsij(a,x)*q) / (dNsij(b,y) * (dNsij(b,y) + dNsij(a,x)))
+                        end if
                     end if
                     do k = 1, nPairsSRO(iSPI,2)
                         l = iFirst + k - 1
@@ -712,14 +741,16 @@ subroutine CompExcessGibbsEnergySUBG(iSolnIndex)
                     dTernaryFactorDG = dTernaryFactorDG + (nA * nX) / (4D0 * dYdk)
 
                     dTernarySum2 = 0D0
-                    do e = 1, nSub1
-                        nA = 0
-                        if (i == e) nA = nA + 1
-                        if (j == e) nA = nA + 1
-                        if (lAsymmetric2(e)) then
-                            dTernarySum2 = dTernarySum2 + (nA * nX) / (4D0 * dXi2)
-                        end if
-                    end do
+                    if (dXi2 > 0D0) then
+                        do e = 1, nSub1
+                            nA = 0
+                            if (i == e) nA = nA + 1
+                            if (j == e) nA = nA + 1
+                            if (lAsymmetric2(e)) then
+                                dTernarySum2 = dTernarySum2 + (nA * nX) / (4D0 * dXi2)
+                            end if
+                        end do
+                    end if
 
                     dTernaryFactorDG = dTernaryFactorDG - dTernarySum2
 
@@ -727,8 +758,10 @@ subroutine CompExcessGibbsEnergySUBG(iSolnIndex)
                     if (i == b) nA = nA + 1
                     if (j == b) nA = nA + 1
 
-                    dTernaryFactorDG = dTernaryFactorDG - (r - 1D0) * ((nA * nX / 4D0) - dYjk * dTernarySum2) &
-                                        / (dXi2 * (1D0 - dYjk / dXi2))
+                    if (dXi2 > 0D0 .AND. DABS(1D0 - dYjk / dXi2) > 0D0) then
+                        dTernaryFactorDG = dTernaryFactorDG - (r - 1D0) * ((nA * nX / 4D0) - dYjk * dTernarySum2) &
+                                            / (dXi2 * (1D0 - dYjk / dXi2))
+                    end if
                 else if (lAsymmetric1(d)) then
                     nA = 0
                     if (i == d) nA = nA + 1
@@ -739,14 +772,16 @@ subroutine CompExcessGibbsEnergySUBG(iSolnIndex)
                     dTernaryFactorDG = dTernaryFactorDG + (nA * nX) / (4D0 * dYdk)
 
                     dTernarySum1 = 0D0
-                    do e = 1, nSub1
-                        nA = 0
-                        if (i == e) nA = nA + 1
-                        if (j == e) nA = nA + 1
-                        if (lAsymmetric1(e)) then
-                            dTernarySum1 = dTernarySum1 + (nA * nX) / (4D0 * dXi1)
-                        end if
-                    end do
+                    if (dXi1 > 0D0) then
+                        do e = 1, nSub1
+                            nA = 0
+                            if (i == e) nA = nA + 1
+                            if (j == e) nA = nA + 1
+                            if (lAsymmetric1(e)) then
+                                dTernarySum1 = dTernarySum1 + (nA * nX) / (4D0 * dXi1)
+                            end if
+                        end do
+                    end if
 
                     dTernaryFactorDG = dTernaryFactorDG - dTernarySum1
 
@@ -754,8 +789,10 @@ subroutine CompExcessGibbsEnergySUBG(iSolnIndex)
                     if (i == a) nA = nA + 1
                     if (j == a) nA = nA + 1
 
-                    dTernaryFactorDG = dTernaryFactorDG - (r - 1D0) * ((nA * nX / 4D0) - dYik * dTernarySum1) &
-                                        / (dXi1 * (1D0 - dYik / dXi1))
+                    if (dXi1 > 0D0 .AND. DABS(1D0 - dYik / dXi1) > 0D0) then
+                        dTernaryFactorDG = dTernaryFactorDG - (r - 1D0) * ((nA * nX / 4D0) - dYik * dTernarySum1) &
+                                            / (dXi1 * (1D0 - dYik / dXi1))
+                    end if
                 else
                     dTernaryFactorDG = -r
                     nA = 0
@@ -779,7 +816,9 @@ subroutine CompExcessGibbsEnergySUBG(iSolnIndex)
                             dTernarySum2 = dTernarySum2 + (nA * nX) / 4D0
                         end if
                     end do
-                    dTernaryFactorDG = dTernaryFactorDG + (r - 1D0) * (1D0 - dTernarySum1 - dTernarySum2) / (1D0 - dXi1 - dXi2)
+                    if (DABS(1D0 - dXi1 - dXi2) > 0D0) then
+                        dTernaryFactorDG = dTernaryFactorDG + (r - 1D0) * (1D0 - dTernarySum1 - dTernarySum2) / (1D0 - dXi1 - dXi2)
+                    end if
                 end if
             end if
 
@@ -787,10 +826,10 @@ subroutine CompExcessGibbsEnergySUBG(iSolnIndex)
             ! G-type terms
             if (cRegularParam(abxy) == 'G') then
                 dDgex = 0D0
-                if (lAsymmetric1(i) .AND. lAsymmetric1(j)) then
+                if (lAsymmetric1(i) .AND. lAsymmetric1(j) .AND. dChi1 /= 0D0 .AND. dChiDen > 0D0) then
                     dDgex = dDgex + dChiFactor * dGex * p / dChi1 / dChiDen
                 end if
-                if (lAsymmetric2(i) .AND. lAsymmetric2(j)) then
+                if (lAsymmetric2(i) .AND. lAsymmetric2(j) .AND. dChi2 /= 0D0 .AND. dChiDen > 0D0) then
                     dDgex = dDgex + dChiFactor * dGex * q / dChi2 / dChiDen
                 end if
                 if ((lAsymmetric1(i) .OR. lAsymmetric2(i)) .AND. (lAsymmetric1(j) .OR. lAsymmetric2(j))) then
@@ -802,13 +841,13 @@ subroutine CompExcessGibbsEnergySUBG(iSolnIndex)
                 dDgex = 0D0
                 do ii = 1, nSub1
                     ! Below is xi with counting of x /= y quads
-                    if (lAsymmetric1(ii)) then
+                    if (lAsymmetric1(ii) .AND. dXi1 > 0D0) then
                         if (ii == i .AND. x == k) dDgex = dDgex + dDgexBase / 4 + dGex * p / (4 * dXi1)
                         if (ii == i .AND. x == l) dDgex = dDgex + dDgexBase / 4 + dGex * p / (4 * dXi1)
                         if (ii == j .AND. x == k) dDgex = dDgex + dDgexBase / 4 + dGex * p / (4 * dXi1)
                         if (ii == j .AND. x == l) dDgex = dDgex + dDgexBase / 4 + dGex * p / (4 * dXi1)
                     end if
-                    if (lAsymmetric2(ii)) then
+                    if (lAsymmetric2(ii) .AND. dXi2 > 0D0) then
                         if (ii == i .AND. x == k) dDgex = dDgex + dDgexBase / 4 + dGex * q / (4 * dXi2)
                         if (ii == i .AND. x == l) dDgex = dDgex + dDgexBase / 4 + dGex * q / (4 * dXi2)
                         if (ii == j .AND. x == k) dDgex = dDgex + dDgexBase / 4 + dGex * q / (4 * dXi2)

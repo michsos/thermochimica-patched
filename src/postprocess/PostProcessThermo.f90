@@ -42,6 +42,14 @@ subroutine PostProcessThermo
     ! Initiate variables:
     dGibbsEnergySys = 0d0
 
+    ! Guard: verify critical arrays are allocated before post-processing.
+    if (.NOT. allocated(dMolesPhase) .OR. .NOT. allocated(dMolesElement) .OR. &
+        .NOT. allocated(dMolesSpecies) .OR. &
+        .NOT. allocated(dElementPotential) .OR. .NOT. allocated(iAssemblage)) then
+        INFOThermo = 24
+        return
+    end if
+
     ! Multiply the number of moles of all phases by the normalizing constant:
     dNormalizeInput = 1D0 / dNormalizeInput
 

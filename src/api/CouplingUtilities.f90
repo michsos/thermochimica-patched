@@ -1092,12 +1092,12 @@ end subroutine GetAllSolnPhaseDrivingForces
 
 subroutine InitThermoAPI
 
-  USE ModuleThermoTolerance, ONLY: SetMachineDefaultTolerances, ApplyToleranceOverride
+  USE ModuleThermoTolerance, ONLY: SetStandaloneDefaultTolerances, ApplyToleranceOverride
 
   implicit none
 
   call InitThermo
-  call SetMachineDefaultTolerances
+  call SetStandaloneDefaultTolerances
   call ApplyToleranceOverride
 
   return

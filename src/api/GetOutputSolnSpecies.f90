@@ -54,11 +54,10 @@ subroutine GetOutputSolnSpecies(cSolnOut, lcSolnOut, cSpeciesOut, lcSpeciesOut, 
     character(*),  intent(in)    :: cSolnOut, cSpeciesOut
     integer,       intent(in)    :: lcSolnOut, lcSpeciesOut
     character(30)                :: cTemp
+    character(30)                :: cSolnOutLen, cSpeciesOutLen
 
-    character(15)                :: cSolnOutLen, cSpeciesOutLen
-
-    cSolnOutLen    = cSolnOut(1:min(15,lcSolnOut))
-    cSpeciesOutLen = cSpeciesOut(1:min(15,lcSpeciesOut))
+    cSolnOutLen    = cSolnOut(1:min(len(cSolnOutLen),lcSolnOut))
+    cSpeciesOutLen = cSpeciesOut(1:min(len(cSpeciesOutLen),lcSpeciesOut))
 
     ! Initialize variables:
     INFO            = 0
@@ -72,11 +71,13 @@ subroutine GetOutputSolnSpecies(cSolnOut, lcSolnOut, cSpeciesOut, lcSpeciesOut, 
         cSolnOutLen    = TRIM(cSolnOutLen)
         cSpeciesOutLen = TRIM(cSpeciesOutLen)
 
-        ! Loop through stable soluton phases to find the one corresponding to the
-        ! solution phase being requested:
+        ! Loop through all solution phases in the current system state to find the
+        ! one corresponding to the solution phase being requested.  Stable phases
+        ! remain covered, and this also exposes the current cached composition of
+        ! unstable candidate phases for debugging/comparison work.
         j = 0
-        LOOP_SOLN: do i = 1, nSolnPhases
-            k = -iAssemblage(nElements - i + 1)
+        LOOP_SOLN: do i = 1, nSolnPhasesSys
+            k = i
 
             if (cSolnOutLen == cSolnPhaseName(k)) then
                 ! Solution phase found.  Record integer index and exit loop.

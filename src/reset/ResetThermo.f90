@@ -36,7 +36,7 @@
 subroutine ResetThermo
 
     USE ModuleThermo
-    USE ModuleThermoIO, ONLY: INFOThermo, lRetryAttempted, lDormantSolnPhases, lDormantSpecies
+    USE ModuleThermoIO, ONLY: INFOThermo, lRetryAttempted, lDormantSolnPhases, lDormantSpecies, dElementMass, lPreset
     USE ModuleGEMSolver
     USE ModuleSubMin
 
@@ -203,6 +203,8 @@ subroutine ResetThermo
     call ResetDormantPhaseCandidateSummary
 
     lRetryAttempted = .FALSE.
+    dElementMass = 0D0
+    lPreset = .FALSE.
 
     ! Return an INFOThermo if deallocation of any of the allocatable variables failed:
     if (i > 0) then
