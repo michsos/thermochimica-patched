@@ -82,11 +82,16 @@ subroutine CheckThermoData
     iTempVec = MAXVAL(iAtomFractionSpecies, DIM = 1)
 
     ! Check to see if at least one pure species exists in the database for each element in the system:
-    do i = 1, nElements
-        ! Skip if the system component corresponds to an electron:
-        if (cElementName(i) == 'e-') cycle
-        if (iTempVec(i) == 0) INFOThermo = 9
-    end do
+    ! (This is a conservative check - the NNLS check below is more rigorous.
+    !  Skip if using an include-only phase list, since pure element species
+    !  are typically excluded in specialized comparisons.)
+    if (nPhasesExcludedExcept == 0) then
+        do i = 1, nElements
+            ! Skip if the system component corresponds to an electron:
+            if (cElementName(i) == 'e-') cycle
+            if (iTempVec(i) == 0) INFOThermo = 9
+        end do
+    end if
 
     ! Check if the input masses can be represented in terms of the available species
     nNonDummy = nSpecies - nDummySpecies

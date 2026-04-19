@@ -48,9 +48,9 @@ subroutine GetPureConPhaseMol(cPureConOut, dPureConMolOut, INFO)
     integer                      :: i, j, k
     real(8),       intent(out)   :: dPureConMolOut
     character(*),  intent(in)    :: cPureConOut
-    character(30)                :: cTemp
-    character(15)                :: cPureTemp
-    cPureTemp = cPureConOut(1:min(15,len(cPureConOut)))
+    character(128)                :: cTemp
+    character(128)                :: cPureTemp
+    cPureTemp = ADJUSTL(cPureConOut)
 
     ! Initialize variables:
     INFO            = 0

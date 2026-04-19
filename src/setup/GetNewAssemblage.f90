@@ -223,6 +223,7 @@ end subroutine GetNewAssemblage
 subroutine CheckLevelingIterHistory(iter,lPhasePass)
 
     USE ModuleThermo
+    USE ModuleThermoIO, ONLY: INFOThermo
 
     implicit none
 
@@ -254,7 +255,12 @@ subroutine CheckLevelingIterHistory(iter,lPhasePass)
 
         end do LOOP_Outer
 
-        ! The phase assemblage in question has previously been considered. The phase assemblage has failed.
+        ! The phase assemblage in question has previously been considered.  At
+        ! low-temperature liquid systems this can trap Leveling in a wrong basin.
+        ! If Thermochimica is already struggling to find a feasible assemblage,
+        ! allow one revisit so the subsequent Gibbs-plane solve can decide.
+        if (INFOThermo == 10) cycle LOOP_Iter
+
         lPhasePass = .FALSE.
         exit LOOP_Iter
 

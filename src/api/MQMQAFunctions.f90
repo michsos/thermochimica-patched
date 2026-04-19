@@ -10,8 +10,8 @@ subroutine GetMqmqaMolesPairs(cPhase, dMolesPairsOut, INFO)
     integer,       intent(out)               :: INFO
     integer                                  :: i, j
     real(8),       intent(out)               :: dMolesPairsOut
-    character(25)                            :: cSearchPhase
-    character(30), dimension(:), allocatable :: cPair
+    character(128)                            :: cSearchPhase
+    character(128), dimension(:), allocatable :: cPair
     real(8), dimension(:), allocatable       :: dPair
     ! integer,  intent(in)                     :: lcPhase
 
@@ -75,8 +75,8 @@ subroutine GetMqmqaPairMolFraction(cPhase, lcPhase, cPairIn, lcPairIn, dMolesPai
     integer                                  :: i, j ,k
     real(8),       intent(out)               :: dMolesPairOut
     real(8)                                  :: dMolesPairs
-    character(25)                            :: cSearchPhase, cSearchPair
-    character(30), dimension(:), allocatable :: cPair
+    character(128)                            :: cSearchPhase, cSearchPair
+    character(128), dimension(:), allocatable :: cPair
     real(8), dimension(:), allocatable       :: dPair
     integer,  intent(in)                     :: lcPhase, lcPairIn
 
@@ -84,8 +84,8 @@ subroutine GetMqmqaPairMolFraction(cPhase, lcPhase, cPairIn, lcPairIn, dMolesPai
     ! but if there are multiple strings, they require lengths.
     cSearchPhase = cPhase
     cSearchPair  = cPairIn
-    cSearchPhase = TRIM(cSearchPhase(1:min(30,lcPhase)))
-    cSearchPair = TRIM(cSearchPair(1:min(30,lcPairIn)))
+    cSearchPhase = TRIM(cSearchPhase(1:min(128,lcPhase)))
+    cSearchPair = TRIM(cSearchPair(1:min(128,lcPairIn)))
 
     ! Initialize variables:
     INFO            = 0
@@ -150,7 +150,7 @@ subroutine GetMqmqaNumberPairsQuads(cPhase, nPairs, nQuads, INFO)
     character(*),  intent(in)                :: cPhase
     integer,       intent(out)               :: INFO, nPairs, nQuads
     integer                                  :: i, j
-    character(25)                            :: cSearchPhase
+    character(128)                            :: cSearchPhase
     ! integer,  intent(in)                     :: lcPhase
 
     ! GetMqmqaNumberPairsQuads was given a mismatched number of arguments between Fortran and C
@@ -208,7 +208,7 @@ subroutine GetMqmqaConstituentFraction(cPhase, iSublattice, cConstituent, dConst
     implicit none
 
     character(*),  intent(in)  :: cPhase, cConstituent
-    character(25)              :: cPhaseSearch, cConstituentSearch
+    character(128)              :: cPhaseSearch, cConstituentSearch
     integer,       intent(in)  :: iSublattice
     integer,       intent(out) :: INFO
     integer                    :: i, j, k, l

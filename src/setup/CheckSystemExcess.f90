@@ -92,7 +92,7 @@ subroutine CheckSystemExcess
         select case (cSolnPhaseTypeCS(i))
             case ('IDMX')
                 nParamPhase(nCounter) = nParam
-            case ('QKTO', 'RKMP', 'RKMPM')
+            case ('QKTO', 'QKTOM', 'RKMP', 'RKMPM')
                 ! Note that this is just checking whether the parameter should be considered.  This format
                 ! is consistent amoungst the above list of phase types.
 
@@ -375,10 +375,11 @@ subroutine CheckSystemExcess
                         do l = iFirst, iLast
                             dGibbsCoeffSpeciesTemp(2:8,l) = dGibbsCoeffSpeciesTemp(2:8,l) / &
                                     dSublatticeChargeCS(k,1,iConstituentSublatticeCS(k,1,c))
-                            dGibbsCoeffSpeciesTemp(10,l)  = dGibbsCoeffSpeciesTemp(10,l)  / &
-                                    dSublatticeChargeCS(k,1,iConstituentSublatticeCS(k,1,c))
-                            dGibbsCoeffSpeciesTemp(12,l)  = dGibbsCoeffSpeciesTemp(12,l)  / &
-                                    dSublatticeChargeCS(k,1,iConstituentSublatticeCS(k,1,c))
+                            ! Scale the coefficient (even-indexed) extra Gibbs energy terms:
+                            do s = 10, nGibbsCoeff - 1, 2
+                                dGibbsCoeffSpeciesTemp(s,l) = dGibbsCoeffSpeciesTemp(s,l) / &
+                                        dSublatticeChargeCS(k,1,iConstituentSublatticeCS(k,1,c))
+                            end do
                         end do
                     end if
                 end do LOOP_findPassed2
@@ -760,7 +761,7 @@ subroutine CheckSystemExcess
         end select
 
         ! Magnetic mixing terms:
-        if (cSolnPhaseTypeCS(i) == 'RKMPM') then
+        if (cSolnPhaseTypeCS(i) == 'RKMPM' .OR. cSolnPhaseTypeCS(i) == 'QKTOM') then
             ! Proceed if there are any mixing parameters for this phase:
             if (nMagParamPhaseCS(i) /= nMagParamPhaseCS(i-1)) then
                 ! Loop through mixing parameters:

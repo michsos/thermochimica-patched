@@ -459,7 +459,7 @@ subroutine matchdict( word, dictionary, nwords, lenword, imatch )
   character (len=*) ::  word
   integer           :: nwords, lenword
   character (len=lenword) :: dictionary(nwords)
-  character(25) :: cWord
+  character(128) :: cWord
 
   integer :: imatch
 
@@ -471,7 +471,7 @@ subroutine matchdict( word, dictionary, nwords, lenword, imatch )
 
   lword=len(word)
   ! write(*,*) 'word ',word,'lword ', lword
-  if(lword > 25)then
+  if(lword > 128)then
      write(*,"(A,i5)") "matchdict: word to match is too big ", lword
      stop
   end if

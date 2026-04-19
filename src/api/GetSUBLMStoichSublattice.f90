@@ -59,8 +59,8 @@ subroutine GetSUBLMStoichSublattice(cSolnOut, iSublatticeOut, dStoichCoefOut, IN
     integer                      :: iSublatticeOut
     real(8),       intent(out)   :: dStoichCoefOut
     character(*),  intent(in)    :: cSolnOut
-    character(15)                :: cTemp
-    cTemp = cSolnOut(1:min(15,len(cSolnOut)))
+    character(128)                :: cTemp
+    cTemp = cSolnOut(1:min(128,len(cSolnOut)))
 
 
     ! Initialize variables:

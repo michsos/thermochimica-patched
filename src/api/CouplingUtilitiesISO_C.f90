@@ -268,6 +268,8 @@ subroutine ResetThermoISO() &
     implicit none
 
     call ResetThermo
+    call ResetReinit
+    call ResetCTZ
 
     return
 
@@ -1207,3 +1209,64 @@ subroutine SetFuzzyStoichISO(lFuzzyStoichIn) &
 
     return
   end subroutine SetMassBalanceToleranceISO
+
+
+  subroutine ExcludePhaseISO(cPhaseName, lcPhaseName) &
+    bind(C, name="TCAPI_excludePhase")
+
+    USE,INTRINSIC :: ISO_C_BINDING
+    USE ModuleThermoIO
+
+    implicit none
+
+    character(kind=c_char,len=1), target, intent(in) :: cPhaseName(*)
+    integer(c_size_t), intent(in), value             :: lcPhaseName
+    character(kind=c_char,len=lcPhaseName), pointer :: fName
+
+    call c_f_pointer(cptr=c_loc(cPhaseName), fptr=fName)
+
+    nPhasesExcluded = nPhasesExcluded + 1
+    cPhasesExcluded(nPhasesExcluded) = ADJUSTL(fName)
+
+    return
+
+  end subroutine ExcludePhaseISO
+
+
+  subroutine ExcludePhaseExceptISO(cPhaseName, lcPhaseName) &
+    bind(C, name="TCAPI_excludePhaseExcept")
+
+    USE,INTRINSIC :: ISO_C_BINDING
+    USE ModuleThermoIO
+
+    implicit none
+
+    character(kind=c_char,len=1), target, intent(in) :: cPhaseName(*)
+    integer(c_size_t), intent(in), value             :: lcPhaseName
+    character(kind=c_char,len=lcPhaseName), pointer :: fName
+
+    call c_f_pointer(cptr=c_loc(cPhaseName), fptr=fName)
+
+    nPhasesExcludedExcept = nPhasesExcludedExcept + 1
+    cPhasesExcludedExcept(nPhasesExcludedExcept) = ADJUSTL(fName)
+
+    return
+
+  end subroutine ExcludePhaseExceptISO
+
+
+  subroutine GetGibbsEnergyISO(dGibbs) &
+    bind(C, name="TCAPI_getGibbsEnergy")
+
+    USE,INTRINSIC :: ISO_C_BINDING
+    USE ModuleThermoIO, only: dGibbsEnergySys
+
+    implicit none
+
+    real(C_DOUBLE), intent(out) :: dGibbs
+
+    dGibbs = dGibbsEnergySys
+
+    return
+
+  end subroutine GetGibbsEnergyISO

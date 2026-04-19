@@ -143,7 +143,6 @@ subroutine SwapSolnForPureConPhase(iPhaseChange,lPhasePass)
         iAssemblage(j) = iPhaseChange
 
         ! Compute the number of moles of each solution phase and establish the Jacobian constraint vector
-        !call CompMolSolnPhase
         call CompMolAllSolnPhases
 
         ! Compute the number of moles of solution species:

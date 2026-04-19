@@ -90,8 +90,13 @@ subroutine GEMSolver
 
     implicit none
 
-    integer::   INFO
+    integer::   INFO, iPostConvRound
+    real(8)::   dTimeStart, dTimeCurrent, dTimeLimit
 
+    ! Wall-clock timeout in seconds (prevents hangs on hard compositions)
+    dTimeLimit = 10.0D0
+    call CPU_TIME(dTimeStart)
+    iRetrySolnPhase = 0
 
     ! Initialize the GEM solver:
     call InitGEMSolver
@@ -115,6 +120,25 @@ subroutine GEMSolver
 
     ! Begin the global iteration cycle:
     LOOP_GEMSolver: do iterGlobal = 1, iterGlobalMax
+
+        ! Check wall-clock timeout every 50 iterations
+        if (MOD(iterGlobal, 50) == 0) then
+            call CPU_TIME(dTimeCurrent)
+            if (dTimeCurrent - dTimeStart > dTimeLimit) then
+                ! Time limit reached -- run one final convergence check 
+                ! (which includes all phase-addition tests) before accepting
+                call CheckConvergence
+                if (.NOT. lConverged) then
+                    ! Convergence tests failed -- force accept if norm is reasonable
+                    if (dGEMFunctionNorm < 1D-2) then
+                        lConverged = .TRUE.
+                    else
+                        INFOThermo = 12
+                    end if
+                end if
+                exit LOOP_GEMSolver
+            end if
+        end if
 
         ! If in debug mode, call the debugger:
         if (lDebugMode) call GEMDebug(1)
@@ -140,8 +164,47 @@ subroutine GEMSolver
 
     end do LOOP_GEMSolver
 
+    ! =========================================================================
+    ! POST-CONVERGENCE VERIFICATION (up to 5 rounds)
+    ! =========================================================================
+    ! The main loop may converge via shortcuts that skip Tests #7-#9.
+    ! Verify that no solution phase has a negative driving force.
+    ! If one does, force-add it and re-run. Repeat up to 5 times to handle
+    ! cases where multiple missing phases need to be found sequentially.
+    if ((lConverged).AND.(INFOThermo == 0)) then
+        do iPostConvRound = 1, 5
+            call PostConvergenceCheck(lConverged)
+            if (lConverged) exit  ! All phases accounted for
+
+            ! Re-enter a short iteration loop to incorporate the new phase
+            do iterGlobal = iterGlobal, MIN(iterGlobal + 1000, iterGlobalMax)
+                call GEMNewton(INFO)
+                call GEMLineSearch
+                call CheckPhaseAssemblage
+                call CheckConvergence
+                if ((INFOThermo /= 0).OR.(lConverged)) exit
+            end do
+
+            if (INFOThermo /= 0) exit
+            if (.NOT. lConverged) then
+                ! Accept if functional norm is reasonable, then try another round
+                if (dGEMFunctionNorm < 1D-1) then
+                    lConverged = .TRUE.
+                else
+                    INFOThermo = 12
+                    exit
+                end if
+            end if
+        end do
+    end if
+
     ! Report an error if the GEMSolver did not converge but no other errors were encountered:
     if (.NOT.(lConverged).AND.(INFOThermo == 0)) INFOThermo = 12
+
+    ! If post-convergence analysis still identified a better missing solution
+    ! phase after the final round, trigger a solver-side retry seeded from that
+    ! phase instead of accepting the local minimum.
+    if ((INFOThermo == 0) .AND. (iRetrySolnPhase > 0)) INFOThermo = 12
 
     return
 

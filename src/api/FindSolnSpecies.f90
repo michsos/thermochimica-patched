@@ -19,7 +19,7 @@ subroutine FindSolnSpecies(cCompName, iLCompName, iElem, dMolSum)
     integer, intent(in):: iElem
     real(8), intent(out):: dMolSum
 
-    character(25)     :: cPhase(50)  ! need to fix max n -> matchdict
+    character(128)     :: cPhase(50)  ! need to fix max n -> matchdict
     integer :: nwords
     integer :: lenCompName
 
@@ -31,7 +31,7 @@ subroutine FindSolnSpecies(cCompName, iLCompName, iElem, dMolSum)
        lenCompName=iLCompName
     end if
 
-    call tokenize(cCompName(1:lenCompName),",",cPhase,25,nwords)
+    call tokenize(cCompName(1:lenCompName),",",cPhase,128,nwords)
 
     if(nwords <= 0)then
        write(*,"(A,i5)") "FindSolnSpecies: no words found ",nwords
@@ -46,7 +46,7 @@ subroutine FindSolnSpecies(cCompName, iLCompName, iElem, dMolSum)
 ! debug
 !       write(*,*) cSolnPhaseName(k)
 
-       call matchdict(cSolnPhaseName(k), cPhase,nwords,25,imatch)
+       call matchdict(cSolnPhaseName(k), cPhase,nwords,128,imatch)
 
        if( imatch > 0 )then
           nmatch = nmatch + 1

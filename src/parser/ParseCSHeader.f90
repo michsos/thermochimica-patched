@@ -81,11 +81,12 @@ subroutine ParseCSHeader
 
     implicit none
 
-    integer              :: i, j, iGasPhase
+    integer              :: i, j, n, iGasPhase
     integer,dimension(7) :: iGequation
     integer,dimension(2) :: iDummy
     character(8)         :: cDummy
     character(78)        :: cSystemTitle
+    character(128)        :: cTempNames(3)
 
     ! Line 1: Read title of system:
     read (1,*,IOSTAT = INFO) cDummy, cSystemTitle
@@ -190,12 +191,20 @@ subroutine ParseCSHeader
     dQKTOParamsCS          = 0D0
 
     ! Line 3: List of system components:
-    read (1,*,IOSTAT = INFO) cElementNameCS(1:nElementsCS)
-
-    if (INFO /= 0) then
-        INFO = 103
-        return
-    end if
+    ! Use fixed-width formatted read (3 names per line, 25 chars each) instead of
+    ! list-directed I/O, because element names like e((Na,Li)(Al,Fe)O2-HT) contain
+    ! commas which list-directed I/O misinterprets as field separators.
+    do i = 1, nElementsCS, 3
+        n = MIN(3, nElementsCS - i + 1)
+        read (1,'(3A25)',IOSTAT = INFO) cTempNames(1:n)
+        if (INFO /= 0) then
+            INFO = 103
+            return
+        end if
+        do j = 1, n
+            cElementNameCS(i + j - 1) = ADJUSTL(cTempNames(j))
+        end do
+    end do
 
     ! Count the number of charged phases and change the name of the system component if it is an electron:
     do i = 1, nElementsCS

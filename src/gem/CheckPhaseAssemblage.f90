@@ -228,7 +228,7 @@ subroutine CheckPhaseAssemblage
         if ((iterGlobal /= iterLast).AND.(nSolnPhases > 0)) call CheckSolnPhaseRem
 
         ! 3) Check if a phase should be added to the system:
-        IF_CheckPhaseAdd: if ((iterGlobal /= iterLast).AND.((iterGlobal - iterLast > 200).OR. &
+        IF_CheckPhaseAdd: if ((iterGlobal /= iterLast).AND.((iterGlobal - iterLast > 50).OR. &
             (dGEMFunctionNorm < dTolerance(13)))) then
 
             ! Check if the system is stagnant (specifically, count the number of solution phases that are

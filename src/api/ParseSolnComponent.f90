@@ -17,7 +17,7 @@ subroutine ParseSolnComponent(iElem, cCompName, iSLen, dMolSum)
     real(8), intent(out):: dMolSum
 
     character (len=*) :: cCompName
-    character(25)     :: cChopName
+    character(128)     :: cChopName
     integer :: iSLen
 
     integer                               :: i, j, k

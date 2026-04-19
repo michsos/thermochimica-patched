@@ -410,11 +410,18 @@ subroutine CheckSystem
 
     ! Loop through pure condensed phases:
     LOOP_PureConPhases: do j = nSpeciesPhaseCS(nSolnPhasesSysCS) + 1, nSpeciesCS
-        ! Check if phase is on the exclusion list
+        ! Check if phase is on the exclusion list (prefix match for pure condensed)
         do i = 1, nPhasesExcluded
             if (cSpeciesNameCS(j) == cPhasesExcluded(i)) then
                 if (lDebugMode) print *, 'Excluding ', cSpeciesNameCS(j)
                 cycle LOOP_PureConPhases
+            end if
+            ! Also match by prefix: "Fe2O3_hematite" matches "Fe2O3_hematite(s)"
+            if (LEN_TRIM(cPhasesExcluded(i)) > 0) then
+                if (INDEX(TRIM(cSpeciesNameCS(j)), TRIM(cPhasesExcluded(i))) == 1) then
+                    if (lDebugMode) print *, 'Excluding (prefix) ', cSpeciesNameCS(j)
+                    cycle LOOP_PureConPhases
+                end if
             end if
         end do
         ! If stoichiometry of phase is zero, skip

@@ -62,8 +62,8 @@ subroutine GetSUBLMSiteFraction(cSolnOut, iSublatticeOut, iConstituentOut, dSite
     integer                      :: iSublatticeOut, iConstituentOut
     real(8),       intent(out)   :: dSiteFractionOut
     character(*),  intent(in)    :: cSolnOut
-    character(15)                :: cTemp
-    cTemp = cSolnOut(1:min(15,len(cSolnOut)))
+    character(128)                :: cTemp
+    cTemp = cSolnOut(1:min(128,len(cSolnOut)))
 
 
     ! Initialize variables:

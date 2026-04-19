@@ -123,7 +123,7 @@ subroutine SwapSolnPhase(iPhaseChange,lPhasePass)
         end do LOOP_CheckMiscible
 
         ! Check if this phase assemblage has been previously considered:
-        if (iterGlobal > 60) then
+        if ((iterGlobal > 60) .OR. (dGEMFunctionNorm <= 1D-3)) then
             j                  = nElements - i + 1
             iAssemblageTest    = iAssemblage
             iAssemblageTest(j) = -iPhaseChange

@@ -59,7 +59,7 @@ subroutine GetSUBLStoichSublattice(cSolnOut, iSublatticeOut, dStoichCoefOut, INF
     integer                      :: iSublatticeOut
     real(8),       intent(out)   :: dStoichCoefOut
     character(*),  intent(in)    :: cSolnOut
-    character(15)                :: cTemp
+    character(128)                :: cTemp
     cTemp = cSolnOut
 
 

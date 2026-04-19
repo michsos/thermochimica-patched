@@ -116,11 +116,11 @@ module ModuleThermo
     real(8),      dimension(:,:,:),allocatable::  dConstituentCoefficients
 
     character(12), dimension(:),   allocatable::            cElementName
-    character(30), dimension(:),   allocatable, target::    cSpeciesName
+    character(128), dimension(:),   allocatable, target::    cSpeciesName
     character(8),  dimension(:),   allocatable::            cSolnPhaseType
-    character(25), dimension(:),   allocatable, target::    cSolnPhaseName
-    character(8),  dimension(:,:,:),allocatable::           cConstituentNameSUB
+    character(128), dimension(:),   allocatable, target::    cSolnPhaseName
+    character(128),  dimension(:,:,:),allocatable::           cConstituentNameSUB
     character,     dimension(:),   allocatable::            cRegularParam
-    character(30), dimension(:,:), allocatable, target::    cPairName
+    character(128), dimension(:,:), allocatable, target::    cPairName
 
 end module ModuleThermo

@@ -48,8 +48,8 @@ subroutine GetPhaseIndex(cPhaseName, lcPhaseName, iIndexOut, INFO)
     integer,       intent(out)   :: iIndexOut
     character(*),  intent(in)    :: cPhaseName
     integer                      :: lcPhaseName
-    character(25)                :: cTemp, cTempPhase
-    cTemp = cPhaseName(1:min(25,lcPhaseName))
+    character(128)                :: cTemp, cTempPhase
+    cTemp = cPhaseName(1:min(128,lcPhaseName))
 
     ! Initialize variables:
     INFO          = 0

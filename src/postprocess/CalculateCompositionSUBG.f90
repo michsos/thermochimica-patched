@@ -14,9 +14,9 @@ subroutine CalculateCompositionSUBG(iSolnIndex,dMolesPairs,lPrint,cPair,dPair)
     real(8), allocatable, dimension(:) :: dXi, dYi, dNi
     real(8), allocatable, dimension(:,:) :: dXij, dNij
     logical :: lPrint
-    character(30), dimension(*), intent(out) :: cPair
+    character(128), dimension(*), intent(out) :: cPair
     real(8), dimension(*), intent(out)       :: dPair
-    character(30)                           :: cDummyB
+    character(128)                           :: cDummyB
     character(2)                            :: cDummy
     ! X_ij/kl corresponds to dMolFraction
 

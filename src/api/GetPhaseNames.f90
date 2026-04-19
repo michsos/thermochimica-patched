@@ -5,7 +5,7 @@ subroutine GetPhaseNames(cPhaseNamesOut)
     implicit none
 
     integer :: i, j
-    character(30), intent(out), dimension(*) :: cPhaseNamesOut
+    character(128), intent(out), dimension(*) :: cPhaseNamesOut
 
     do i = 1, nSolnPhasesSysCS
         cPhaseNamesOut(i) = cSolnPhaseNameCS(i)

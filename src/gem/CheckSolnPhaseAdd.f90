@@ -113,9 +113,8 @@ subroutine CheckSolnPhaseAdd
         ! Skip this phase if it is already part of the assemblage:
         if (lSolnPhases(i)) cycle LOOP_SolnPhaseAdd
 
-        ! Only add a miscible phase if the functional norm is below a certain value:
-       ! if ((lMiscibility(i)).AND.(dGEMFunctionNorm > 1D-4)) cycle LOOP_SolnPhaseAdd
-        if ((lMiscibility(i)).AND.(dGEMFunctionNorm > 1D-4).AND.(iterGlobal - iterLast < 300)) cycle LOOP_SolnPhaseAdd
+        ! Only add a miscible phase if enough iterations have passed:
+        if ((lMiscibility(i)).AND.(iterGlobal - iterLast < 20)) cycle LOOP_SolnPhaseAdd
 
         ! Check if a solution phase should be added:
         IF_SolnPhaseAdd: if ((dDrivingForceSoln(i) < dTolerance(4)) .AND. &

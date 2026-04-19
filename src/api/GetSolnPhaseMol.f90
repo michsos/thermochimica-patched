@@ -48,7 +48,7 @@ subroutine GetSolnPhaseMol(cSolnOut, dSolnMolOut, INFO)
     integer                      :: i, j, k, iph
     real(8),       intent(out)   :: dSolnMolOut
     character(*),  intent(in)    :: cSolnOut
-    character(25)                :: cTemp
+    character(128)                :: cTemp
     cTemp = cSolnOut
 
     ! Initialize variables:

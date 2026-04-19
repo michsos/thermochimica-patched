@@ -114,7 +114,7 @@ subroutine AddSolnPhase(iPhaseChange,lSwapLater,lPhasePass)
     end if
 
     ! Check if this phase assemblage has been previously considered:
-    if (iterGlobal > 60) then
+    if ((iterGlobal > 60) .OR. (dGEMFunctionNorm <= 1D-3)) then
 
         j                  = nElements - nSolnPhases
         iAssemblageTest    = iAssemblage
@@ -162,7 +162,7 @@ subroutine AddSolnPhase(iPhaseChange,lSwapLater,lPhasePass)
             nConPhases              = nConPhases - 1
 
             ! Check if this phase assemblage has been previously considered:
-            if (iterGlobal > 60) then
+            if ((iterGlobal > 60) .OR. (dGEMFunctionNorm <= 1D-3)) then
 
                 iAssemblageTest    = iAssemblage
 

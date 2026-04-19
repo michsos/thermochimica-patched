@@ -83,7 +83,7 @@ subroutine ParseCSDataBlockGibbs(i,j,iCounterGibbsEqn)
     real(8),dimension(15) :: dTempVec
     real(8),parameter     :: dGibbsDummy = 1D6
     character(5)          :: cDummy
-    character(26)         :: cSpeciesNameDummy
+    character(128)         :: cSpeciesNameDummy
 
 
     ! Initialize variables:
@@ -93,7 +93,7 @@ subroutine ParseCSDataBlockGibbs(i,j,iCounterGibbsEqn)
 
     ! Entry 3: Read name of constituent species:
     read (1,100,IOSTAT = INFO) cSpeciesNameCS(j)
-    100 FORMAT (A26)
+    100 FORMAT (A128)
     cSpeciesNameCS(j) = TRIM(ADJUSTL(cSpeciesNameCS(j)))
 
     ! Check to see if there is more than one particle per constituent formula mass.
@@ -169,17 +169,14 @@ subroutine ParseCSDataBlockGibbs(i,j,iCounterGibbsEqn)
             backspace(UNIT = 1)
        end if
 
-        if (l == 1) then
-            read (1,*, IOSTAT = INFO) iDummy, dGibbsCoeffSpeciesTemp(8:9, iCounterGibbsEqn)
-        elseif (l == 2) then
-            read (1,*, IOSTAT = INFO) iDummy, dGibbsCoeffSpeciesTemp(8:11,iCounterGibbsEqn)
-        elseif (l == 3) then
-            read (1,*, IOSTAT = INFO) iDummy, dGibbsCoeffSpeciesTemp(8:13,iCounterGibbsEqn)
-        elseif (l == 0) then
+        if (l == 0) then
             ! Do nothing... except still have to read a line for 4 or 16.
             if ((iGibbsEqType == 16).OR.(iGibbsEqType == 4)) then
                 read (1,*,IOSTAT = INFO) l
             end if
+        elseif ((l >= 1).AND.(l <= 7)) then
+            ! Read the extra Gibbs energy coefficients (2 values per additional term):
+            read (1,*, IOSTAT = INFO) iDummy, dGibbsCoeffSpeciesTemp(8:7+2*l, iCounterGibbsEqn)
         else
             INFO = 1500 + i
             return

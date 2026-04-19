@@ -64,9 +64,9 @@ subroutine GetOutputSiteFraction(cSolnOut, lcSolnOut, iSublatticeOut, iConstitue
     real(8),       intent(out)   :: dSiteFractionOut
     character(*),  intent(in)    :: cSolnOut
     integer                      :: lcSolnOut
-    character(15)                :: cTemp
+    character(128)                :: cTemp
 
-    cTemp = cSolnOut(1:min(15,lcSolnOut))
+    cTemp = cSolnOut(1:min(128,lcSolnOut))
 !    cTemp = cSolnOut(1:min(15,len(cSolnOut)))
 
     ! Initialize variables:

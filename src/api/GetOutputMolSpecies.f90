@@ -49,11 +49,11 @@ subroutine GetOutputMolSpecies(cSpeciesOut, lcSpeciesOut, dMolFractionOut, dMole
     integer,       intent(out)   :: INFO
     integer                      :: i, k
     real(8),       intent(out)   :: dMolFractionOut, dMolesOut
-    character(30), intent(inout) :: cSpeciesOut
+    character(128), intent(inout) :: cSpeciesOut
     integer                      :: lcSpeciesOut
-    character(30)                :: cTemp, cSearch
+    character(128)                :: cTemp, cSearch
 
-    cSearch = cSpeciesOut(1:min(30,lcSpeciesOut))
+    cSearch = cSpeciesOut(1:min(128,lcSpeciesOut))
     cSearch = TRIM(cSearch)
 
     ! Initialize variables:

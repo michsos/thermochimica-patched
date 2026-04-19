@@ -64,7 +64,74 @@ subroutine ParseCSDataBlockQKTO( i )
 
     implicit none
 
-    integer :: i
+    integer :: i, j, k
+
+    ! QKTOM phases include magnetic mixing terms before non-ideal mixing terms,
+    ! analogous to RKMPM in ParseCSDataBlockRKMP.
+    ! The end of the list of magnetic mixing terms is indicated by a "0".
+    if (cSolnPhaseTypeCS(i) == 'QKTOM') then
+        LOOP_MagneticMixingQKTO: do
+
+            ! Grow arrays if capacity is exceeded:
+            if (nMagParamCS + 1 > size(iMagneticParamCS, 1)) call GrowMagneticParamArrays
+
+            ! Read in number of constituents involved in parameter:
+            read (1,*,IOSTAT = INFO) iMagneticParamCS(nMagParamCS+1,1)
+
+            ! The end of the parameter listing is marked by "0":
+            if (iMagneticParamCS(nMagParamCS+1,1) == 0) exit LOOP_MagneticMixingQKTO
+
+            ! Check if the parameter is binary or ternary:
+            if (iMagneticParamCS(nMagParamCS+1,1) == 2) then
+
+                ! Binary magnetic mixing terms:
+                read (1,*,IOSTAT = INFO) iMagneticParamCS(nMagParamCS+1,2:4)
+
+                k = iMagneticParamCS(nMagParamCS+1,4)
+
+                do j = 1, k
+                    nMagParamCS = nMagParamCS + 1
+                    iMagneticParamCS(nMagParamCS,1:3) = iMagneticParamCS(nMagParamCS-j+1,1:3)
+                    iMagneticParamCS(nMagParamCS,4)   = j - 1
+                    read (1,*,IOSTAT = INFO) dMagneticParamCS(nMagParamCS,1:2)
+                end do
+
+            elseif (iMagneticParamCS(nMagParamCS+1,1) == 3) then
+
+                ! Ternary magnetic mixing terms:
+                read (1,*,IOSTAT = INFO) iMagneticParamCS(nMagParamCS+1,2:5)
+
+                k = iMagneticParamCS(nMagParamCS+1,5)
+
+                do j = 1, k
+                    nMagParamCS = nMagParamCS + 1
+                    iMagneticParamCS(nMagParamCS,1:5) = iMagneticParamCS(nMagParamCS-j+1,1:5)
+                    iMagneticParamCS(nMagParamCS,5)   = iMagneticParamCS(nMagParamCS,1+j)
+                    read (1,*,IOSTAT = INFO) dMagneticParamCS(nMagParamCS,1:2)
+                end do
+
+            elseif (iMagneticParamCS(nMagParamCS+1,1) == 4) then
+
+                ! Quaternary magnetic mixing terms:
+                read (1,*,IOSTAT = INFO) iMagneticParamCS(nMagParamCS+1,2:6)
+
+                k = iMagneticParamCS(nMagParamCS+1,6)
+
+                do j = 1, k
+                    nMagParamCS = nMagParamCS + 1
+                    iMagneticParamCS(nMagParamCS,1:6) = iMagneticParamCS(nMagParamCS-j+1,1:6)
+                    iMagneticParamCS(nMagParamCS,6)   = iMagneticParamCS(nMagParamCS,1+j)
+                    read (1,*,IOSTAT = INFO) dMagneticParamCS(nMagParamCS,1:2)
+                end do
+
+            else
+                ! This parameter is not recognized; record an error.
+                INFO = 43
+                return
+            end if
+
+        end do LOOP_MagneticMixingQKTO
+    end if
 
     ! Loop through excess parameters:
     LOOP_ExcessMixingQKTO: do

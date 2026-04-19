@@ -48,29 +48,34 @@ subroutine SaveReinitData
   ! Initialize storage variables if not allocated already at the right size
 
   ! nElements
-  if (allocated(dMolesPhase_Old) .AND. sizeof(dMolesPhase_Old) < nElements) &
-    deallocate(dMolesPhase_Old)
+  if (allocated(dMolesPhase_Old)) then
+    if (size(dMolesPhase_Old) < nElements) deallocate(dMolesPhase_Old)
+  end if
   if (.NOT. allocated(dMolesPhase_Old)) &
     allocate(dMolesPhase_Old(nElements))
 
-  if (allocated(dElementPotential_Old) .AND. sizeof(dElementPotential_Old) < nElements) &
-    deallocate(dElementPotential_Old)
+  if (allocated(dElementPotential_Old)) then
+    if (size(dElementPotential_Old) < nElements) deallocate(dElementPotential_Old)
+  end if
   if (.NOT. allocated(dElementPotential_Old)) &
     allocate(dElementPotential_Old(nElements))
 
-  if (allocated(iAssemblage_Old) .AND. sizeof(iAssemblage_Old) < nElements) &
-    deallocate(iAssemblage_Old)
+  if (allocated(iAssemblage_Old)) then
+    if (size(iAssemblage_Old) < nElements) deallocate(iAssemblage_Old)
+  end if
   if (.NOT. allocated(iAssemblage_Old)) &
     allocate(iAssemblage_Old(nElements))
 
   !nSpecies
-  if (allocated(dChemicalPotential_Old) .AND. sizeof(dChemicalPotential_Old) < nSpecies) &
-    deallocate(dChemicalPotential_Old)
+  if (allocated(dChemicalPotential_Old)) then
+    if (size(dChemicalPotential_Old) < nSpecies) deallocate(dChemicalPotential_Old)
+  end if
   if (.NOT. allocated(dChemicalPotential_Old)) &
     allocate(dChemicalPotential_Old(nSpecies))
 
-  if (allocated(dMolFraction_Old) .AND. sizeof(dMolFraction_Old) < nSpecies) &
-    deallocate(dMolFraction_Old)
+  if (allocated(dMolFraction_Old)) then
+    if (size(dMolFraction_Old) < nSpecies) deallocate(dMolFraction_Old)
+  end if
   if (.NOT. allocated(dMolFraction_Old)) &
     allocate(dMolFraction_Old(nSpecies))
 

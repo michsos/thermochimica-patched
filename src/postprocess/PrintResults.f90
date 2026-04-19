@@ -148,8 +148,8 @@ subroutine PrintResultsSolnPhase
     real(8)                                 :: dCutOff, dTemp, Tcritical, B, StructureFactor, dMolesPairs
     real(8),    dimension(:),   allocatable :: dTempVec, dTempSpecies
     character(2)                            :: cDummy
-    character(30)                           :: cDummyB, FMTA, FMTB
-    character(30), dimension(:),allocatable :: cPair
+    character(128)                           :: cDummyB, FMTA, FMTB
+    character(128), dimension(:),allocatable :: cPair
     real(8), dimension(:), allocatable      :: dPair
 
 
@@ -242,7 +242,7 @@ subroutine PrintResultsSolnPhase
         allocate(iTempSpecies(k), dTempSpecies(k))
         select case (cSolnPhaseType(l))
 
-            case ('IDMX', 'RKMP', 'RKMPM', 'QKTO')
+            case ('IDMX', 'RKMP', 'RKMPM', 'QKTO', 'QKTOM')
                 ! Initialize temporary variables:
                 dTempSpecies(1:k) = dmolFraction(iFirst:iLast)
 

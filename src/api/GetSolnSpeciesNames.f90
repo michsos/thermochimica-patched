@@ -5,7 +5,7 @@ subroutine GetSolnSpeciesNames(cSolnSpeciesNamesOut)
     implicit none
 
     integer :: i, j, k
-    character(30), intent(out), dimension(*) :: cSolnSpeciesNamesOut
+    character(128), intent(out), dimension(*) :: cSolnSpeciesNamesOut
 
     k = 0
     do i = 1, nSolnPhasesSysCS

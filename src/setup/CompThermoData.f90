@@ -156,6 +156,16 @@ subroutine CompThermoData
         jj = 0
         iSublPhaseIndex = iPhaseSublatticeCS(n)
         if ((cSolnPhaseTypeCS(n) == 'SUBG') .OR. (cSolnPhaseTypeCS(n) == 'SUBQ')) then
+            ! Guard: if this phase has no active species (l <= 0), we must still
+            ! advance iCounterGibbsEqn for all species, then skip the rest.
+            if (l <= 0) then
+                do i = iFirst, iLast
+                    do k = 1, nGibbsEqSpecies(i)
+                        iCounterGibbsEqn = iCounterGibbsEqn + 1
+                    end do
+                end do
+                cycle LOOP_nPhasesCS
+            end if
             dChemicalPotentialTemp = 0D0
             LOOP_SROPairs: do i = iFirst, iFirst - 1 + nPairsSROCS(iSublPhaseIndex,1)
                 l = 0
@@ -182,26 +192,14 @@ subroutine CompThermoData
                 end do
 
                 ! Compute additional standard molar Gibbs energy terms:
-                if (dGibbsCoeffSpeciesTemp(9,l) .EQ. 99) then
-                    dChemicalPotentialTemp(i) = dChemicalPotentialTemp(i) + dGibbsCoeffSpeciesTemp(8,l) * dLogT
-                else
-                    dChemicalPotentialTemp(i) = dChemicalPotentialTemp(i) + dGibbsCoeffSpeciesTemp(8,l) &
-                        *dTemperature**dGibbsCoeffSpeciesTemp(9,l)
-                end if
-
-                if (dGibbsCoeffSpeciesTemp(11,l) .EQ. 99) then
-                    dChemicalPotentialTemp(i) = dChemicalPotentialTemp(i) + dGibbsCoeffSpeciesTemp(10,l) * dLogT
-                else
-                    dChemicalPotentialTemp(i) = dChemicalPotentialTemp(i) + dGibbsCoeffSpeciesTemp(10,l) &
-                        * dTemperature**dGibbsCoeffSpeciesTemp(11,l)
-                end if
-
-                if (dGibbsCoeffSpeciesTemp(13,l) .EQ. 99) then
-                    dChemicalPotentialTemp(i) = dChemicalPotentialTemp(i) + dGibbsCoeffSpeciesTemp(12,l) * dLogT
-                else
-                    dChemicalPotentialTemp(i) = dChemicalPotentialTemp(i) + dGibbsCoeffSpeciesTemp(12,l) &
-                        * dTemperature**dGibbsCoeffSpeciesTemp(13,l)
-                end if
+                do k = 8, nGibbsCoeff - 1, 2
+                    if (dGibbsCoeffSpeciesTemp(k+1,l) .EQ. 99) then
+                        dChemicalPotentialTemp(i) = dChemicalPotentialTemp(i) + dGibbsCoeffSpeciesTemp(k,l) * dLogT
+                    else
+                        dChemicalPotentialTemp(i) = dChemicalPotentialTemp(i) + dGibbsCoeffSpeciesTemp(k,l) &
+                            *dTemperature**dGibbsCoeffSpeciesTemp(k+1,l)
+                    end if
+                end do
 
                 ! Convert chemical potentials to dimensionless units:
                 dChemicalPotentialTemp(i) = dChemicalPotentialTemp(i) * dTemp * DFLOAT(iParticlesPerMoleCS(i))
@@ -364,26 +362,14 @@ subroutine CompThermoData
                 end do
 
                 ! Compute additional standard molar Gibbs energy terms:
-                if (dGibbsCoeffSpeciesTemp(9,l2) .EQ. 99) then
-                    dChemicalPotential(j) = dChemicalPotential(j) + dGibbsCoeffSpeciesTemp(8,l2) * dLogT
-                else
-                    dChemicalPotential(j) = dChemicalPotential(j) + dGibbsCoeffSpeciesTemp(8,l2) &
-                        *dTemperature**dGibbsCoeffSpeciesTemp(9,l2)
-                end if
-
-                if (dGibbsCoeffSpeciesTemp(11,l2) .EQ. 99) then
-                    dChemicalPotential(j) = dChemicalPotential(j) + dGibbsCoeffSpeciesTemp(10,l2) * dLogT
-                else
-                    dChemicalPotential(j) = dChemicalPotential(j) + dGibbsCoeffSpeciesTemp(10,l2) &
-                        * dTemperature**dGibbsCoeffSpeciesTemp(11,l2)
-                end if
-
-                if (dGibbsCoeffSpeciesTemp(13,l2) .EQ. 99) then
-                    dChemicalPotential(j) = dChemicalPotential(j) + dGibbsCoeffSpeciesTemp(12,l2) * dLogT
-                else
-                    dChemicalPotential(j) = dChemicalPotential(j) + dGibbsCoeffSpeciesTemp(12,l2) &
-                        * dTemperature**dGibbsCoeffSpeciesTemp(13,l2)
-                end if
+                do k = 8, nGibbsCoeff - 1, 2
+                    if (dGibbsCoeffSpeciesTemp(k+1,l2) .EQ. 99) then
+                        dChemicalPotential(j) = dChemicalPotential(j) + dGibbsCoeffSpeciesTemp(k,l2) * dLogT
+                    else
+                        dChemicalPotential(j) = dChemicalPotential(j) + dGibbsCoeffSpeciesTemp(k,l2) &
+                            *dTemperature**dGibbsCoeffSpeciesTemp(k+1,l2)
+                    end if
+                end do
 
                 if ((cSolnPhaseTypeCS(n) == 'SUBM')) then
                     jj = jj + 1
@@ -505,26 +491,14 @@ subroutine CompThermoData
         end do
 
         ! Compute additional standard molar Gibbs energy terms:
-        if (dGibbsCoeffSpeciesTemp(9,l2) .EQ. 99) then
-            dChemicalPotential(j) = dChemicalPotential(j) + dGibbsCoeffSpeciesTemp(8,l2) * dLogT
-        else
-            dChemicalPotential(j) = dChemicalPotential(j) + dGibbsCoeffSpeciesTemp(8,l2) &
-                *dTemperature**dGibbsCoeffSpeciesTemp(9,l2)
-        end if
-
-        if (dGibbsCoeffSpeciesTemp(11,l2) .EQ. 99) then
-            dChemicalPotential(j) = dChemicalPotential(j) + dGibbsCoeffSpeciesTemp(10,l2) * dLogT
-        else
-            dChemicalPotential(j) = dChemicalPotential(j) + dGibbsCoeffSpeciesTemp(10,l2) &
-                * dTemperature**dGibbsCoeffSpeciesTemp(11,l2)
-        end if
-
-        if (dGibbsCoeffSpeciesTemp(13,l2) .EQ. 99) then
-            dChemicalPotential(j) = dChemicalPotential(j) + dGibbsCoeffSpeciesTemp(12,l2) * dLogT
-        else
-            dChemicalPotential(j) = dChemicalPotential(j) + dGibbsCoeffSpeciesTemp(12,l2) &
-                * dTemperature**dGibbsCoeffSpeciesTemp(13,l2)
-        end if
+        do k = 8, nGibbsCoeff - 1, 2
+            if (dGibbsCoeffSpeciesTemp(k+1,l2) .EQ. 99) then
+                dChemicalPotential(j) = dChemicalPotential(j) + dGibbsCoeffSpeciesTemp(k,l2) * dLogT
+            else
+                dChemicalPotential(j) = dChemicalPotential(j) + dGibbsCoeffSpeciesTemp(k,l2) &
+                    *dTemperature**dGibbsCoeffSpeciesTemp(k+1,l2)
+            end if
+        end do
 
         ! If there are multiple Standard Gibbs Energy equations, check which one to use in the
         ! case of repeated temperature ranges. The rule appears to be to use the greater (less
@@ -605,7 +579,7 @@ subroutine CompThermoData
                 cRegularParam(n) = cRegularParamCS(j)
 
                 select case (cSolnPhaseTypeCS(i))
-                    case ('QKTO', 'RKMP', 'RKMPM')
+                    case ('QKTO', 'QKTOM', 'RKMP', 'RKMPM')
                         ! Compute excess term coefficients
                         do k = 1, 6
                             dExcessGibbsParam(n) = dExcessGibbsParam(n) + dRegularParamCS(j,k) * dGibbsCoeff(k)
@@ -795,7 +769,7 @@ subroutine CompThermoData
                 iMagneticParam(nn,1:nParamMax*2+3) = iMagneticParamCS(j,1:nParamMax*2+3)
                 dMagneticParam(nn,1:2) = dMagneticParamCS(j,1:2)
 
-                if (cSolnPhaseTypeCS(i) == 'RKMPM') then
+                if (cSolnPhaseTypeCS(i) == 'RKMPM' .OR. cSolnPhaseTypeCS(i) == 'QKTOM') then
                     ! Loop through species involved in mixing parameter:
                     do k = 1, iMagneticParamCS(j,1)
                         m                    = iMagneticParamCS(j,k+1) + nSpeciesPhaseCS(i-1)
@@ -999,8 +973,10 @@ subroutine CompThermoData
 
     ! Loop through all solution phases:
     LOOP_EID_Phase: do i = 1, nSolnPhasesSys
-        ! Check if this phase may be ionic:
-        if ((cSolnPhaseType(i) == 'SUBL').OR.(cSolnPhaseType(i) == 'SUBLM')) then
+        ! Check if this phase may be ionic (SUBL/SUBLM have sublattice charges,
+        ! SUBG/SUBQ have pseudo-electron elements for charge neutrality):
+        if ((cSolnPhaseType(i) == 'SUBL').OR.(cSolnPhaseType(i) == 'SUBLM') &
+            .OR.(cSolnPhaseType(i) == 'SUBG').OR.(cSolnPhaseType(i) == 'SUBQ')) then
             ! Loop through species in phase:
             LOOP_EID_Species: do j = nSpeciesPhase(i-1) + 1, nSpeciesPhase(i)
                 ! Loop through system components represented by electrons:

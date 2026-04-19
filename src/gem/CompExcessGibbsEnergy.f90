@@ -77,14 +77,18 @@ subroutine CompExcessGibbsEnergy(iSolnIndex)
             dGibbsSolnPhase(iSolnIndex) = dGibbsSolnPhase(iSolnIndex) + dChemicalPotential(i) * dMolesSpecies(i)
         end do
 
-    case ('QKTO')
+    case ('QKTO', 'QKTOM')
+
+        ! Compute magnetic terms if this is a magnetic phase:
+        if (cSolnPhaseType(iSolnIndex) == 'QKTOM') call CompGibbsMagneticSoln(iSolnIndex)
 
         ! Compute the excess terms for a Quasichemical Kohler-TOop (QKTO) model:
         call CompExcessGibbsEnergyQKTO(iSolnIndex)
 
         ! Compute the chemical potentials of each species and the molar Gibbs energy of the phase:
         do i = iFirst, iLast
-            dChemicalPotential(i)       = dStdGibbsEnergy(i) + DLOG(DMAX1(dMolFraction(i), 1D-75)) + dPartialExcessGibbs(i)
+            dChemicalPotential(i)       = dStdGibbsEnergy(i) + DLOG(DMAX1(dMolFraction(i), 1D-75)) + dMagGibbsEnergy(i) &
+                + dPartialExcessGibbs(i)
             dGibbsSolnPhase(iSolnIndex) = dGibbsSolnPhase(iSolnIndex) + dChemicalPotential(i) * dMolesSpecies(i)
         end do
 

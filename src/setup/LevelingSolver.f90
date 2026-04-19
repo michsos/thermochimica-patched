@@ -188,7 +188,7 @@ subroutine LevelingSolver
     call GetFirstAssemblage
 
     ! START LEVELING:
-    LOOP_Leveling: do iter = 1, 1000
+    LOOP_Leveling: do iter = 1, 500
 
         ! Readjust the chemical potentials of all species and phases in the system:
         m = SIZE(dAtomFractionSpecies,1)

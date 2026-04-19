@@ -56,9 +56,10 @@ subroutine CheckMiscibilityGap(iSolnPhaseIndex,lAddPhase)
 
     implicit none
 
-    integer::  i, iFirst, iLast, nConstituents, iSolnPhaseIndex
-    real(8)::  dMinMoleFraction, dMaxMoleFraction
-    logical::  lAddPhase
+    integer::  i, iFirst, iLast, iFirstOther, iLastOther, nConstituents, iSolnPhaseIndex, iOther, iMaxOther
+    real(8)::  dMinMoleFraction, dMaxMoleFraction, dBestDrivingForce, dSum
+    logical::  lAddPhase, lPhasePass
+    real(8), allocatable :: dBestMolFraction(:)
 
 
     ! Initialize variables:
@@ -70,6 +71,67 @@ subroutine CheckMiscibilityGap(iSolnPhaseIndex,lAddPhase)
     dMaxMoleFraction = 1D0 - dMinMoleFraction * DFLOAT(nConstituents-1)
     dMaxMoleFraction = DMAX1(dMaxMoleFraction, 0.9D0)
     lAddPhase        = .FALSE.
+    dBestDrivingForce = 0D0
+
+    if (allocated(dBestMolFraction)) deallocate(dBestMolFraction)
+    allocate(dBestMolFraction(nConstituents))
+    dBestMolFraction = 0D0
+
+    ! First probe an interior composition.  Corner-only starts are a poor match
+    ! for liquid minima that are stabilized by mixing and sit away from the
+    ! simplex extremums.
+    dMolFraction(iFirst:iLast) = 1D0 / DFLOAT(nConstituents)
+    lPhasePass = .FALSE.
+    call Subminimization(iSolnPhaseIndex, lPhasePass)
+
+    if (lPhasePass) then
+        if (dDrivingForceSoln(iSolnPhaseIndex) < dBestDrivingForce) then
+            dBestDrivingForce = dDrivingForceSoln(iSolnPhaseIndex)
+            dBestMolFraction = dMolFraction(iFirst:iLast)
+            lAddPhase = .TRUE.
+        end if
+    end if
+
+    ! For duplicate liquid phases, also probe a perturbed version of the
+    ! companion liquid's current composition.  The second basin is often close to
+    ! the first stable liquid rather than at a simplex corner.
+    if (lMiscibility(iSolnPhaseIndex)) then
+        iOther = 0
+        if ((iSolnPhaseIndex > 1) .AND. (cSolnPhaseName(iSolnPhaseIndex) == cSolnPhaseName(iSolnPhaseIndex - 1))) then
+            iOther = iSolnPhaseIndex - 1
+        else
+            do i = 1, nSolnPhasesSys
+                if (i == iSolnPhaseIndex) cycle
+                if (cSolnPhaseName(i) == cSolnPhaseName(iSolnPhaseIndex)) then
+                    iOther = i
+                    exit
+                end if
+            end do
+        end if
+
+        if (iOther > 0) then
+            iFirstOther = nSpeciesPhase(iOther - 1) + 1
+            iLastOther  = nSpeciesPhase(iOther)
+            if (iLastOther - iFirstOther == iLast - iFirst) then
+                dMolFraction(iFirst:iLast) = dMolFraction(iFirstOther:iLastOther)
+                iMaxOther = MAXVAL(MAXLOC(dMolFraction(iFirst:iLast)))
+                dMolFraction(iFirst + iMaxOther - 1) = DMAX1(dMinMoleFraction, 0.5D0 * dMolFraction(iFirst + iMaxOther - 1))
+                dSum = SUM(dMolFraction(iFirst:iLast))
+                if (dSum > 0D0) dMolFraction(iFirst:iLast) = dMolFraction(iFirst:iLast) / dSum
+
+                lPhasePass = .FALSE.
+                call Subminimization(iSolnPhaseIndex, lPhasePass)
+
+                if (lPhasePass) then
+                    if (dDrivingForceSoln(iSolnPhaseIndex) < dBestDrivingForce) then
+                        dBestDrivingForce = dDrivingForceSoln(iSolnPhaseIndex)
+                        dBestMolFraction = dMolFraction(iFirst:iLast)
+                        lAddPhase = .TRUE.
+                    end if
+                end if
+            end if
+        end if
+    end if
 
     ! Perform subminimization multiple times by initializing from all extremums of the domain space:
     LOOP_Constituents: do i = 1, nConstituents
@@ -79,12 +141,25 @@ subroutine CheckMiscibilityGap(iSolnPhaseIndex,lAddPhase)
         dMolFraction(iFirst+i-1)   = dMaxMoleFraction
 
         ! Perform subminimization:
-        call Subminimization(iSolnPhaseIndex, lAddPhase)
+        lPhasePass = .FALSE.
+        call Subminimization(iSolnPhaseIndex, lPhasePass)
 
-        ! Exit if this phase should be added to the system:
-        if (lAddPhase) exit LOOP_Constituents
+        if (lPhasePass) then
+            if (dDrivingForceSoln(iSolnPhaseIndex) < dBestDrivingForce) then
+                dBestDrivingForce = dDrivingForceSoln(iSolnPhaseIndex)
+                dBestMolFraction = dMolFraction(iFirst:iLast)
+                lAddPhase = .TRUE.
+            end if
+        end if
 
     end do LOOP_Constituents
+
+    if (lAddPhase) then
+        dMolFraction(iFirst:iLast) = dBestMolFraction
+        dDrivingForceSoln(iSolnPhaseIndex) = dBestDrivingForce
+    end if
+
+    if (allocated(dBestMolFraction)) deallocate(dBestMolFraction)
 
     return
 

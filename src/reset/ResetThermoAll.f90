@@ -29,6 +29,8 @@
 
 subroutine ResetThermoAll
 
+    USE ModuleThermoIO
+
     ! Reset thermochimica:
     call ResetThermo
 
@@ -40,6 +42,12 @@ subroutine ResetThermoAll
 
     ! Reset CTZ data:
     call ResetCTZ
+
+    ! Reset phase exclusion lists:
+    nPhasesExcluded = 0
+    nPhasesExcludedExcept = 0
+    cPhasesExcluded = ''
+    cPhasesExcludedExcept = ''
 
     return
 

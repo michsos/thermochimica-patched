@@ -118,7 +118,11 @@ subroutine CheckIterHistory(iAssemblageTest,iterBack,lSwapLater)
             end do LOOP_Outter
 
             ! CONSIDER THIS TEMPORARY TO CONSIDER:
-            if (iterGlobal <= 1000) then
+            ! Near convergence, allow the solver to revisit an earlier
+            ! assemblage.  The remaining raw non-Fe misses are often nearby
+            ! basin corrections where the first visit to an assemblage was not
+            ! yet at the best liquid/solid partition.
+            if ((iterGlobal <= 1000) .AND. (dGEMFunctionNorm > 1D-3)) then
 
                 lSwapLater = .TRUE.
                 exit LOOP_History

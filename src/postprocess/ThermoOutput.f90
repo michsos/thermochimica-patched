@@ -272,7 +272,7 @@ function IsPureConPhaseInSys(cPureConPhaseNameOut)
 
     integer::                 i
     character(*),intent(in):: cPureConPhaseNameOut
-    character(26)::           cTemp
+    character(128)::           cTemp
     logical::                 IsPureConPhaseInSys
 
 

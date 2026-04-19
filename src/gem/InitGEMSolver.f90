@@ -363,77 +363,97 @@ subroutine InitGemCheckSolnPhase
 
     implicit none
 
-    integer::   i, j, k, l, nConPhasesTemp
+    integer::   i, j, k, l, nConPhasesTemp, iBestPhase, iFirst, iLast
     integer,dimension(nElements):: iAssemblageLast
-    real(8)::   dTemp
+    real(8)::   dTemp, dBestDrivingForce
     logical::   lPhasePass
+    real(8), allocatable :: dBestMolFraction(:)
 
 
     ! Initialize variables:
-    lPhasePass = .FALSE.
+    lPhasePass        = .FALSE.
+    iBestPhase        = 0
+    dBestDrivingForce = 0D0
+    if (allocated(dBestMolFraction)) deallocate(dBestMolFraction)
+    allocate(dBestMolFraction(nSpeciesPhase(nSolnPhasesSys)))
+    dBestMolFraction = 0D0
 
-    ! Loop through all solution phases in the system to check for a miscibiltiy gap:
+    ! Scan all solution phases and keep the most stable candidate rather than
+    ! accepting the first phase with a negative driving force.
     LOOP_Subminimization: do i = 1, nSolnPhasesSys
 
         call CheckMiscibilityGap(i,lPhasePass)
 
-        ! If this phase should be added, then add it:
-        IF_AddPhase: if (lPhasePass) then
-
-            ! First, check if the solution phase should be added directly or if it should swap another phase:
-            IF_PhaseRule: if (nConPhases + nSolnPhases < nElements) then
-                ! This solution phase can be added directly:
-                nSolnPhases            = nSolnPhases + 1
-                k                      = nElements - nSolnPhases + 1
-                iAssemblage(k)         = -i
-                lSolnPhases(i)         = .TRUE.
-                dSumMolFractionSoln(i) = 1D0
-            else
-                ! This solution phase should swap a pure condensed phase.
-
-                dMolesPhase            = dMolesPhase * 0.95D0
-                lSolnPhases(i)         = .TRUE.
-                dSumMolFractionSoln(i) = 1D0
-
-                ! Shuffle the phase assmeblage
-                call ShuffleAssemblage(-i,j)
-
-                ! Loop through pure condensed phases to see which one can be swapped:
-                nConPhasesTemp = nConPhases
-                LOOP_ConPhases: do j = 1, nConPhasesTemp
-                    dTemp                   = dMolesPhase(j)
-                    iAssemblageLast         = iAssemblage
-                    iAssemblage(nConPhases) = -i
-                    nConPhases              = nConPhases - 1
-                    nSolnPhases             = nSolnPhases + 1
-
-                    ! Compute the number of moles of each solution phase and establish the Jacobian constraint vector
-                    call CompMolSolnPhase
-
-                    ! Check to make sure that the phase can be added:
-                    call CheckPhaseChange(lPhasePass,l)
-
-                    if (lPhasePass) then
-                        ! This phase assemblage is appropriate for testing.
-                        exit LOOP_ConPhases
-                    else
-                        ! This phase assemblage is not appropriate for testing.  Return to the previous assemblage.
-                        dMolesPhase(j) = dTemp
-                        iAssemblage    = iAssemblageLast
-                        nConPhases     = nConPhases  + 1
-                        nSolnPhases    = nSolnPhases - 1
-                    end if
-
-                end do LOOP_ConPhases
-
-            end if IF_PhaseRule
-
-            ! Exit the loop:
-            exit LOOP_Subminimization
-
-        end if IF_AddPhase
+        if ((lPhasePass).AND.(dDrivingForceSoln(i) < dBestDrivingForce)) then
+            iBestPhase        = i
+            dBestDrivingForce = dDrivingForceSoln(i)
+            iFirst = nSpeciesPhase(i - 1) + 1
+            iLast  = nSpeciesPhase(i)
+            dBestMolFraction(iFirst:iLast) = dMolFraction(iFirst:iLast)
+        end if
 
     end do LOOP_Subminimization
+
+    ! If a solution phase should be added, then add the best candidate:
+    IF_AddPhase: if (iBestPhase > 0) then
+
+        iFirst = nSpeciesPhase(iBestPhase - 1) + 1
+        iLast  = nSpeciesPhase(iBestPhase)
+        dMolFraction(iFirst:iLast) = dBestMolFraction(iFirst:iLast)
+
+        ! First, check if the solution phase should be added directly or if it should swap another phase:
+        IF_PhaseRule: if (nConPhases + nSolnPhases < nElements) then
+            ! This solution phase can be added directly:
+            nSolnPhases                    = nSolnPhases + 1
+            k                              = nElements - nSolnPhases + 1
+            iAssemblage(k)                 = -iBestPhase
+            lSolnPhases(iBestPhase)        = .TRUE.
+            dSumMolFractionSoln(iBestPhase) = SUM(dBestMolFraction(iFirst:iLast))
+            if (dSumMolFractionSoln(iBestPhase) <= 0D0) dSumMolFractionSoln(iBestPhase) = 1D0
+        else
+            ! This solution phase should swap a pure condensed phase.
+
+            dMolesPhase                     = dMolesPhase * 0.95D0
+            lSolnPhases(iBestPhase)         = .TRUE.
+            dSumMolFractionSoln(iBestPhase) = SUM(dBestMolFraction(iFirst:iLast))
+            if (dSumMolFractionSoln(iBestPhase) <= 0D0) dSumMolFractionSoln(iBestPhase) = 1D0
+
+            ! Shuffle the phase assmeblage
+            call ShuffleAssemblage(-iBestPhase,j)
+
+            ! Loop through pure condensed phases to see which one can be swapped:
+            nConPhasesTemp = nConPhases
+            LOOP_ConPhases: do j = 1, nConPhasesTemp
+                dTemp                   = dMolesPhase(j)
+                iAssemblageLast         = iAssemblage
+                iAssemblage(nConPhases) = -iBestPhase
+                nConPhases              = nConPhases - 1
+                nSolnPhases             = nSolnPhases + 1
+
+                ! Compute the number of moles of each solution phase and establish the Jacobian constraint vector
+                call CompMolSolnPhase
+
+                ! Check to make sure that the phase can be added:
+                call CheckPhaseChange(lPhasePass,l)
+
+                if (lPhasePass) then
+                    ! This phase assemblage is appropriate for testing.
+                    exit LOOP_ConPhases
+                else
+                    ! This phase assemblage is not appropriate for testing.  Return to the previous assemblage.
+                    dMolesPhase(j) = dTemp
+                    iAssemblage    = iAssemblageLast
+                    nConPhases     = nConPhases  + 1
+                    nSolnPhases    = nSolnPhases - 1
+                end if
+
+            end do LOOP_ConPhases
+
+        end if IF_PhaseRule
+
+    end if IF_AddPhase
+
+    if (allocated(dBestMolFraction)) deallocate(dBestMolFraction)
 
 end subroutine InitGemCheckSolnPhase
 

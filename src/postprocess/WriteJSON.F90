@@ -90,7 +90,7 @@ subroutine WriteJSONSolnPhase
     integer :: c, i, j, k, l, s, iFirst, iLast, iChargedPhaseID, nElectron
     real(8) :: Tcritical, B, StructureFactor, dTempMolesPhase, dTotalElements, dCurrentElement
     character(16) :: intStr
-    character(25) :: tempSpeciesName
+    character(128) :: tempSpeciesName
 
     write(1,*) '  "solution phases": {'
 

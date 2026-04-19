@@ -53,12 +53,12 @@ subroutine GetOutputSolnSpecies(cSolnOut, lcSolnOut, cSpeciesOut, lcSpeciesOut, 
     real(8),       intent(out)   :: dMolFractionOut, dChemPotSpecies
     character(*),  intent(in)    :: cSolnOut, cSpeciesOut
     integer,       intent(in)    :: lcSolnOut, lcSpeciesOut
-    character(30)                :: cTemp
+    character(128)                :: cTemp
 
-    character(15)                :: cSolnOutLen, cSpeciesOutLen
+    character(128)                :: cSolnOutLen, cSpeciesOutLen
 
-    cSolnOutLen    = cSolnOut(1:min(15,lcSolnOut))
-    cSpeciesOutLen = cSpeciesOut(1:min(15,lcSpeciesOut))
+    cSolnOutLen    = cSolnOut(1:min(128,lcSolnOut))
+    cSpeciesOutLen = cSpeciesOut(1:min(128,lcSpeciesOut))
 
     ! Initialize variables:
     INFO            = 0

@@ -117,6 +117,8 @@ subroutine ResetThermo
     i = i + INFO
     if (allocated(dPartialExcessGibbsLast)) deallocate(dPartialExcessGibbsLast, STAT = INFO)
     i = i + INFO
+    if (allocated(dRetryMolFraction)) deallocate(dRetryMolFraction, STAT = INFO)
+    i = i + INFO
     if (allocated(dEffStoichSolnPhase)) deallocate(dEffStoichSolnPhase, STAT = INFO)
     i = i + INFO
     if (allocated(lSolnPhases)) deallocate(lSolnPhases, STAT = INFO)
@@ -197,6 +199,39 @@ subroutine ResetThermo
     i = i + INFO
 
     lRetryAttempted = .FALSE.
+
+    ! Reset saved scalar solver state that survives across external calls when
+    ! only ResetThermo is used.  Leaving these values stale can contaminate the
+    ! next calculation even after all arrays are deallocated.
+    iterLast = 0
+    iterStep = 0
+    iterRevert = 0
+    iterGlobal = 0
+    iterLastCon = 0
+    iterLastSoln = 0
+    iterSwap = 0
+    iterLastMiscGapCheck = 0
+    iConPhaseLast = 0
+    iSolnPhaseLast = 0
+    iSolnSwap = 0
+    iPureConSwap = 0
+    iRetrySolnPhase = 0
+    dGEMFunctionNorm = 0D0
+    dGEMFunctionNormLast = 0D0
+    dMaxSpeciesChange = 0D0
+    dMinGibbs = 0D0
+    lDebugMode = .FALSE.
+    lRevertSystem = .FALSE.
+    lConverged = .FALSE.
+
+    nVar = 0
+    iFirst = 0
+    iLast = 0
+    iSolnPhaseIndexOther = 0
+    dDrivingForce = 0D0
+    dDrivingForceLast = 0D0
+    dSubMinFunctionNorm = 0D0
+    lSubMinConverged = .FALSE.
 
     ! Return an INFOThermo if deallocation of any of the allocatable variables failed:
     if (i > 0) then

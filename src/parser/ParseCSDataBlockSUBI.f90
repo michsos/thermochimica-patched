@@ -80,7 +80,7 @@ subroutine ParseCSDataBlockSUBI(i)
     integer                   :: c, i, j, k, n, s, v, iDummy, iSubLat
     logical                   :: lTripleTerm
     character(8)              :: cDummy
-    character(75)             :: cTempConstituent
+    character(75)              :: cTempConstituent
     ! Counter to determine if there are two or more SUBI
     ! phases present for a miscibility gap.
     iMiscSUBI = iMiscSUBI + 1

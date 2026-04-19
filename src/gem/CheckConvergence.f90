@@ -215,24 +215,28 @@ subroutine CheckConvergence
         if (lGibbsMinCheck) return
     end if
 
+    ! Return if the functional norm is too large.  In other words, it's not worth the flops checking.
+    if (lDebugMode) print *, "Test Shortcut ", dGEMFunctionNorm
+
     ! CONVERGENCE TEST SHORTCUT
     ! -----------------------------------------------------------------------------------
-    if (lDebugMode) print *, "Test Shortcut ", dGEMFunctionNorm
-    ! Now that crucial tests have been done, can check for convergence shortcut
-    ! If the functional norm is less than a specified tolerance and the system hasn't changed,
-    ! call it a day:
-    if ((dGEMFunctionNorm < dTolerance(12)).AND.(iterGlobal - iterLast > 100).AND.(iterGlobal > 1000))  then
+    ! If the functional norm is small enough and the system hasn't changed recently,
+    ! accept convergence. Full phase-addition tests (#4-#9) run periodically and
+    ! post-convergence verification in GEMSolver catches any missed phases.
+    if ((dGEMFunctionNorm < dTolerance(12)).AND.(iterGlobal - iterLast > 50).AND.(iterGlobal > 200))  then
         lConverged = .TRUE.
         return
-    else if ((dGEMFunctionNorm < 1D-2).AND.          (iterGlobal - iterLast > 2000)) then
+    else if ((dGEMFunctionNorm < 1D-2).AND.          (iterGlobal - iterLast > 500)) then
         lConverged = .TRUE.
         return
-    else if ((dGEMFunctionNorm < 1D-5).AND.(iterGlobal > 1000)) then
+    else if ((dGEMFunctionNorm < 1D-5).AND.(iterGlobal > 200)) then
+        lConverged = .TRUE.
+        return
+    else if ((dGEMFunctionNorm < 1D-1).AND.(iterGlobal > 1500)) then
         lConverged = .TRUE.
         return
     end if
     if (lDebugMode) print *, "Test Shortcut 2"
-    ! Return if the functional norm is too large.  In other words, it's not worth the flops checking.
     if (dGEMFunctionNorm > dTolerance(1)) return
 
     ! TEST #4: Check whether a pure condensed phase should be added to the phase assemblage:

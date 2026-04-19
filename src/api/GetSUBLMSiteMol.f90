@@ -63,8 +63,8 @@ subroutine GetSUBLMSiteMol(cSolnOut, iSublatticeOut, iConstituentOut, dSiteMolOu
     real(8),       intent(out)   :: dSiteMolOut
     real(8)                      :: dSiteFractionOut, dStoichCoefOut, dSolnMolOut
     character(*),  intent(in)    :: cSolnOut
-    character(15)                :: cTemp
-    cTemp = cSolnOut(1:min(15,len(cSolnOut)))
+    character(128)                :: cTemp
+    cTemp = cSolnOut(1:min(128,len(cSolnOut)))
 
 
     ! Initialize variables:
