@@ -210,9 +210,15 @@ subroutine CheckConvergence
         if (dMassNorm < 1D-6) then
             if (lDebugMode) print *, "New Gibbs minimum"
             dMinGibbs = dTempGibbs
+            ! Capture the full assemblage at this feasible lower-Gibbs state
+            ! so it can be restored later if the solver drifts to a higher-G
+            ! local minimum.
+            call UpdateBestAssemblageSnapshot
         end if
     elseif (ABS((dTempGibbs-dMinGibbs)/dMinGibbs) > 1D-6) then
-        if (lGibbsMinCheck) return
+        ! Do not short-circuit the later phase-addition tests when the Gibbs
+        ! minimum check is enabled. Returning here can trap the solver in a
+        ! locally stable assemblage by preventing Tests #4-#9 from running.
     end if
 
     ! Return if the functional norm is too large.  In other words, it's not worth the flops checking.
@@ -380,7 +386,13 @@ subroutine CheckConvergence
     end do LOOP_TEST9
 
     ! If all of the above criterions have been satisfied, then the system has converged.
-    if (INFOThermo == 0) lConverged = .TRUE.
+    if (INFOThermo == 0) then
+        lConverged = .TRUE.
+        ! Record this feasible converged assemblage if it is the lowest-Gibbs
+        ! state seen so far during the solve.  This protects against the solver
+        ! later transiting through a worse local minimum and accepting it.
+        call UpdateBestAssemblageSnapshot
+    end if
 
     return
 

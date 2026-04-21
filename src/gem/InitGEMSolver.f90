@@ -57,7 +57,7 @@
 subroutine InitGEMSolver
 
     USE ModuleThermo
-    USE ModuleThermoIO, ONLY: INFOThermo, lReinitLoaded
+    USE ModuleThermoIO, ONLY: INFOThermo, lReinitLoaded, lRetryAttempted
     USE ModuleGEMSolver
     USE ModuleReinit
 
@@ -149,6 +149,36 @@ subroutine InitGEMSolver
 
     if (allocated(dMolesPhaseLast)) deallocate(dMolesPhaseLast)
     allocate(dMolesPhaseLast(nElements))
+
+    ! Allocate the best-Gibbs snapshot buffers (preserved across the solve).
+    ! IMPORTANT: if we are inside a RetryCalculationFirstPhase re-entry
+    ! (lRetryAttempted == .TRUE.), the snapshot captured in the first solve
+    ! pass MUST be preserved -- otherwise we lose the lower-G transit that
+    ! the restore logic relies on.
+    if (.NOT. lRetryAttempted) then
+        if (allocated(iBestAssemblage))           deallocate(iBestAssemblage)
+        if (allocated(dBestMolesPhaseSnap))       deallocate(dBestMolesPhaseSnap)
+        if (allocated(dBestElementPotentialSnap)) deallocate(dBestElementPotentialSnap)
+        if (allocated(dBestMolFractionSnap))      deallocate(dBestMolFractionSnap)
+        if (allocated(dBestMolesSpeciesSnap))     deallocate(dBestMolesSpeciesSnap)
+        if (allocated(lBestSolnPhasesSnap))       deallocate(lBestSolnPhasesSnap)
+        allocate(iBestAssemblage(nElements))
+        allocate(dBestMolesPhaseSnap(nElements))
+        allocate(dBestElementPotentialSnap(nElements))
+        allocate(dBestMolFractionSnap(nSpecies))
+        allocate(dBestMolesSpeciesSnap(nSpecies))
+        allocate(lBestSolnPhasesSnap(nSolnPhasesSys))
+        iBestAssemblage          = 0
+        dBestMolesPhaseSnap      = 0D0
+        dBestElementPotentialSnap = 0D0
+        dBestMolFractionSnap     = 0D0
+        dBestMolesSpeciesSnap    = 0D0
+        lBestSolnPhasesSnap      = .FALSE.
+        lBestAssemblageValid     = .FALSE.
+        nBestConPhases           = 0
+        nBestSolnPhases          = 0
+        dBestSnapshotGibbs       = HUGE(0D0)
+    end if
 
     ! Initialize variables:
     iterLast                = 0

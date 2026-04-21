@@ -73,4 +73,18 @@ module ModuleGEMSolver
     logical                              ::  lDebugMode, lRevertSystem, lConverged
     logical, dimension(:),   allocatable ::  lSolnPhases, lMiscibility
 
+    ! ----------------------------------------------------------------------
+    ! Best-Gibbs snapshot: records the lowest-Gibbs feasible assemblage seen
+    ! at any point during the solve, so we can restore it if the final
+    ! converged state is a local (higher-G) minimum.  Populated by
+    ! UpdateBestAssemblageSnapshot and consumed by GEMSolver at exit.
+    ! ----------------------------------------------------------------------
+    logical                              ::  lBestAssemblageValid
+    integer                              ::  nBestConPhases, nBestSolnPhases
+    real(8)                              ::  dBestSnapshotGibbs
+    integer, dimension(:),   allocatable ::  iBestAssemblage
+    real(8), dimension(:),   allocatable ::  dBestMolesPhaseSnap, dBestElementPotentialSnap
+    real(8), dimension(:),   allocatable ::  dBestMolFractionSnap, dBestMolesSpeciesSnap
+    logical, dimension(:),   allocatable ::  lBestSolnPhasesSnap
+
 end module ModuleGEMSolver

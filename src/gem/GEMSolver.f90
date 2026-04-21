@@ -201,10 +201,54 @@ subroutine GEMSolver
     ! Report an error if the GEMSolver did not converge but no other errors were encountered:
     if (.NOT.(lConverged).AND.(INFOThermo == 0)) INFOThermo = 12
 
+    ! =========================================================================
+    ! BEST-GIBBS SNAPSHOT RESTORATION
+    ! =========================================================================
+    ! If at any point during the solve (or inside PostConvergenceCheck rounds)
+    ! a feasible converged assemblage with a strictly lower integral Gibbs
+    ! energy than the current state was observed, restore it and polish with a
+    ! final short Newton run.  This rescues the solver from landing in a local
+    ! minimum that was worse than a state already visited (e.g. transiting
+    ! through the correct Slag-liq-bearing assemblage and then drifting off).
+    if ((INFOThermo == 0) .AND. lBestAssemblageValid) then
+        block
+            real(8) :: dCurrentGibbs
+            integer :: iElem, iPolishIter
+            character(len=32) :: cTraceEnvG
+            logical :: lTraceG
+            lTraceG = .FALSE.
+            call GET_ENVIRONMENT_VARIABLE('TC_TRACE_POSTCONV', cTraceEnvG)
+            if (TRIM(cTraceEnvG) == '1') lTraceG = .TRUE.
+            dCurrentGibbs = 0D0
+            do iElem = 1, nElements
+                dCurrentGibbs = dCurrentGibbs + dElementPotential(iElem) &
+                    * dMolesElement(iElem) * dTemperature * dIdealConstant
+            end do
+            if (lTraceG) write(*,'(A,ES16.8,A,ES16.8)') '[GEMSolver RESTORE-CHECK] current=', &
+                dCurrentGibbs, ' best=', dBestSnapshotGibbs
+            ! Require a meaningful improvement (> 1 J or > 1e-6 relative) so that
+            ! numerical noise does not trigger spurious restores.
+            if (dBestSnapshotGibbs < dCurrentGibbs - MAX(1.0D0, 1.0D-6 * DABS(dCurrentGibbs))) then
+                if (lTraceG) write(*,'(A)') '[GEMSolver RESTORE] restoring snapshot'
+                call RestoreBestAssemblageSnapshot
+                ! After restore, accept the state directly.  The snapshot was
+                ! taken from a prior lConverged==.TRUE. state (CheckConvergence
+                ! satisfied all feasibility tests), so it is already a valid
+                ! answer.  Running a Newton polish can drift away from the
+                ! restored state and undo the restore -- so we skip polishing
+                ! and accept the snapshot as-is.
+                lConverged = .TRUE.
+            end if
+        end block
+    end if
+
     ! If post-convergence analysis still identified a better missing solution
     ! phase after the final round, trigger a solver-side retry seeded from that
-    ! phase instead of accepting the local minimum.
-    if ((INFOThermo == 0) .AND. (iRetrySolnPhase > 0)) INFOThermo = 12
+    ! phase instead of accepting the local minimum.  This remains as a fallback
+    ! for cases where the basin was never actually converged into.
+    if ((INFOThermo == 0) .AND. (iRetrySolnPhase > 0) .AND. (.NOT. lRetryAttempted)) then
+        INFOThermo = 12
+    end if
 
     return
 

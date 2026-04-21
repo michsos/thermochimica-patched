@@ -1270,3 +1270,25 @@ subroutine SetFuzzyStoichISO(lFuzzyStoichIn) &
     return
 
   end subroutine GetGibbsEnergyISO
+
+! ===================================================================
+! Dump parsed database to JSON file
+! ===================================================================
+subroutine DumpDatabaseJSONISO(cOutPath, lcOutPath) &
+    bind(C, name="TCAPI_dumpDatabaseJSON")
+
+    USE,INTRINSIC :: ISO_C_BINDING
+
+    implicit none
+
+    character(kind=c_char,len=1), target, intent(in) :: cOutPath(*)
+    integer(c_size_t), intent(in), value             :: lcOutPath
+    character(kind=c_char,len=lcOutPath), pointer :: fOutPath
+
+    call c_f_pointer(cptr=c_loc(cOutPath), fptr=fOutPath)
+
+    call DumpDatabaseJSON(fOutPath)
+
+    return
+
+end subroutine DumpDatabaseJSONISO
